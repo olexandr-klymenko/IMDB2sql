@@ -1,0 +1,2 @@
+data_sets_url: "https://datasets.imdbws.com"
+data_sets_file_pattern: ".tsv.gz"
