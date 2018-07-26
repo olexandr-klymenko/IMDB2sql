@@ -2,7 +2,6 @@ import csv
 import gzip
 import http.server
 import io
-import threading
 
 __all__ = ['TestServer', 'TEST_HTTP_PORT', 'TEST_FILENAME', 'TEST_TVS_DATA']
 
