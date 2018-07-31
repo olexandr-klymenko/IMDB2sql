@@ -2,7 +2,7 @@ import unittest
 
 import validators
 
-from src.utils.get_links import get_links
+from src.utils import get_links
 
 
 class TestGetLinks(unittest.TestCase):

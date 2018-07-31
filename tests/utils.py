@@ -3,12 +3,13 @@ import gzip
 import http.server
 import io
 
-__all__ = ['TestServer', 'TEST_HTTP_PORT', 'TEST_FILENAME', 'TEST_TVS_DATA']
+__all__ = ['TestServer', 'TEST_HTTP_PORT', 'TEST_FILENAME', 'TEST_TVS_DATA', 'TEST_FILENAME_INVALID']
 
 
 TEST_HTTP_PORT = 8333
 DELIMITER = '\t'
 TEST_FILENAME = 'name.basics.tsv.gz'
+TEST_FILENAME_INVALID = 'name.basics.tsv.zip'
 TEST_TVS_DATA = r"""
 nconst	primaryName	birthYear	deathYear	primaryProfession	knownForTitles
 nm0000001	Fred Astaire	1899	1987	soundtrack,actor,miscellaneous	tt0072308,tt0050419,tt0045537,tt0043044
@@ -26,7 +27,7 @@ nm0000009	Richard Burton	1925	1984	actor,producer,soundtrack	tt0059749,tt0087803
 class Handler(http.server.SimpleHTTPRequestHandler):
 
     def do_GET(self):
-        if self.path == f'/{TEST_FILENAME}':
+        if self.path in [f'/{TEST_FILENAME}', f'/{TEST_FILENAME_INVALID}']:
             self._handle_success()
         else:
             self.send_error(404)
@@ -34,7 +35,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
     def _handle_success(self):
         self.send_response(200)
-        self.send_header('Content-Disposition', f'attachment; filename={TEST_FILENAME}')
+        self.send_header('Content-Disposition', f'attachment; filename={self.path[1:]}')
         self.send_header('Content-type', 'application/x-gzip')
         self.end_headers()
         self.wfile.write(_generate_gzipped_tvs_file_stream())
