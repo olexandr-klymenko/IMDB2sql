@@ -8,8 +8,8 @@ __all__ = ['TestServer', 'TEST_HTTP_PORT', 'TEST_FILENAME', 'TEST_TVS_DATA', 'TE
 
 TEST_HTTP_PORT = 8333
 DELIMITER = '\t'
-TEST_FILENAME = 'name.basics.tsv.gz'
-TEST_FILENAME_INVALID = 'name.basics.tsv.zip'
+TEST_FILENAME = 'valid.test.dataset.tsv.gz'
+TEST_FILENAME_INVALID = 'invalid.test.dataset.tsv.zip'
 TEST_TVS_DATA = r"""
 nconst	primaryName	birthYear	deathYear	primaryProfession	knownForTitles
 nm0000001	Fred Astaire	1899	1987	soundtrack,actor,miscellaneous	tt0072308,tt0050419,tt0045537,tt0043044

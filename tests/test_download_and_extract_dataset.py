@@ -1,35 +1,34 @@
-import tempfile
 import threading
 import unittest
-from os import remove
-from os.path import exists
 
-from src.utils import download_and_extract_dataset
+from src.utils import DataSetsHandler
 from tests.utils import TestServer, TEST_HTTP_PORT, TEST_TVS_DATA, TEST_FILENAME, TEST_FILENAME_INVALID
 
 
 class TestDownloadAndExtractDataset(unittest.TestCase):
+    server: TestServer = None
+    downloader: DataSetsHandler = None
 
-    def setUp(self):
-        self.server = TestServer()
-        thread = threading.Thread(target=self.server.serve_forever)
+    @classmethod
+    def setUpClass(cls):
+        cls.downloader = DataSetsHandler([f'http://127.0.0.1:{TEST_HTTP_PORT}/{TEST_FILENAME}'])
+        cls.server = TestServer()
+        thread = threading.Thread(target=cls.server.serve_forever)
         thread.start()
-        self.dataset_path = None
 
-    def tearDown(self):
-        self.server.socket.close()
-        self.server.shutdown()
-        if self.dataset_path:
-            remove(self.dataset_path)
+    @classmethod
+    def tearDownClass(cls):
+        cls.server.socket.close()
+        cls.server.shutdown()
+        cls.downloader.cleanup()
 
     def test_download_and_extract_dataset(self):
-        _, tmp_file = tempfile.mkstemp()
-
-        self.dataset_path = download_and_extract_dataset(f'http://127.0.0.1:{TEST_HTTP_PORT}/{TEST_FILENAME}', tmp_file)
-        with open(self.dataset_path) as f:
-            self.assertEqual(TEST_TVS_DATA, f.read().strip('\n'))
-        self.assertFalse(exists(tmp_file))
+        self.downloader.download()
+        self.downloader.extract()
+        for data_set in [el.extracted for el in self.downloader.data_sets]:
+            with open(data_set) as f:
+                self.assertEqual(TEST_TVS_DATA, f.read().strip('\n'))
 
     def test_invalid_data_set_filename(self):
         with self.assertRaises(Exception):
-            download_and_extract_dataset(f'http://127.0.0.1:{TEST_HTTP_PORT}/{TEST_FILENAME_INVALID}')
+            DataSetsHandler([f'http://127.0.0.1:{TEST_HTTP_PORT}/{TEST_FILENAME_INVALID}'])

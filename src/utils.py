@@ -1,13 +1,15 @@
 import gzip
+import os
 import re
+import tempfile
 import urllib.parse
 import urllib.request
-from os.path import join, dirname, exists
-import os
-import yaml
-import tempfile
+from collections import namedtuple
+from multiprocessing import Pool
+from os.path import join, exists
 from typing import List
 
+import yaml
 from bs4 import BeautifulSoup
 
 DATA_SET_FILENAME_PATTERN = re.compile('^/(.*).gz')
@@ -23,24 +25,47 @@ def get_links(dataset_index_page_content: str, datasets_file_pattern: str) -> Li
     return [link.get('href') for link in bs_obj.find_all('a') if link.get('href').endswith(datasets_file_pattern)]
 
 
-def download_and_extract_dataset(url: str, local_filename: str=None) -> str:
-    raw_filepath = urllib.parse.urlparse(url).path
-    file_path_re = DATA_SET_FILENAME_PATTERN.search(raw_filepath)
-    if file_path_re is None:
-        raise Exception("Data set filename doesn't match")
+DataSet = namedtuple('DataSet', ['url', 'gzipped', 'extracted'])
 
-    try:
-        if local_filename is None:
-            _, local_filename = tempfile.mkstemp()
 
-        urllib.request.urlretrieve(url=url, filename=local_filename)
-        with gzip.open(local_filename) as zf:
-            filename = file_path_re.group(1)
-            dest_path = join(dirname(local_filename), filename)
-            with open(dest_path, 'w') as f:
-                f.write(zf.read().decode())
-                os.remove(local_filename)
-                return dest_path
-    finally:
-        if exists(local_filename):
-            os.remove(local_filename)
+class DataSetsHandler:
+    def __init__(self, urls):
+        self.data_sets: List[DataSet] = []
+        self._init_data_sets(urls)
+
+    def _init_data_sets(self, urls):
+        for url in urls:
+            path = urllib.parse.urlparse(url).path
+            file_path_re = DATA_SET_FILENAME_PATTERN.search(path)
+            if file_path_re is None:
+                raise Exception("Data set filename doesn't match")
+            gzipped = join(tempfile.gettempdir(), path.lstrip('/'))
+            extracted = join(tempfile.gettempdir(), file_path_re.group(1))
+            self.data_sets.append(DataSet(gzipped=gzipped, extracted=extracted, url=url))
+
+    def download(self):
+        print('Downloading ...')
+        Pool().map(self._download_file, self.data_sets)
+
+    @staticmethod
+    def _download_file(data_set: DataSet):
+        print(f'{data_set.url} -> {data_set.gzipped} ...')
+        urllib.request.urlretrieve(url=data_set.url, filename=data_set.gzipped)
+
+    def extract(self):
+        print('Extracting ...')
+        for data_set in self.data_sets:
+            print(f'{data_set.gzipped} -> {data_set.extracted} ...')
+            with gzip.open(data_set.gzipped) as zf:
+                with open(data_set.extracted, 'w') as f:
+                    for line in zf:
+                        f.write(line.decode())
+                    os.remove(data_set.gzipped)
+
+    def cleanup(self):
+        for data_set in self.data_sets:
+            if exists(data_set.gzipped):
+                os.remove(data_set.gzipped)
+
+            if exists(data_set.extracted):
+                os.remove(data_set.extracted)
