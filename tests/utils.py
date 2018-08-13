@@ -4,9 +4,10 @@ import http.server
 import io
 from collections import namedtuple
 
-from src.models import Name
+from src.models import Name, Title
 
-__all__ = ['TestServer', 'TEST_HTTP_PORT', 'TEST_FILENAME', 'TEST_TVS_DATA', 'TEST_FILENAME_INVALID', 'parse_names']
+__all__ = ['TestServer', 'TEST_HTTP_PORT', 'TEST_FILENAME', 'TEST_TVS_DATA', 'TEST_FILENAME_INVALID',
+           'parse_names', 'parse_titles']
 
 
 TEST_HTTP_PORT = 8333
@@ -73,7 +74,31 @@ def parse_names(file_path):
             id=getattr(data_set_class, 'nconst'),
             primaryName=getattr(data_set_class, 'primaryName'),
             birthYear=getattr(data_set_class, 'birthYear'),
-            deathYear=getattr(data_set_class, 'deathYear'),
+            deathYear=_get_null(getattr(data_set_class, 'deathYear')),
             primaryProfession=getattr(data_set_class, 'primaryProfession')
         )
         yield name_line
+
+
+def parse_titles(file_path):
+    for data_set_class in parse_dataset(file_path):
+        title_line = Title(
+            id=getattr(data_set_class, 'tconst'),
+            titleType=getattr(data_set_class, 'titleType'),
+            primaryTitle=getattr(data_set_class, 'primaryTitle'),
+            originalTitle=getattr(data_set_class, 'originalTitle'),
+            isAdult=bool(getattr(data_set_class, 'isAdult')),
+            startYear=_get_null(getattr(data_set_class, 'startYear')),
+            endYear=_get_null(getattr(data_set_class, 'endYear')),
+            runtimeMinutes=getattr(data_set_class, 'runtimeMinutes'),
+            genres=getattr(data_set_class, 'genres'),
+        )
+        yield title_line
+
+
+def _get_null(value):
+    if value != '\\N':
+        return value
+
+
+# TODO: Handle many to many relations update
