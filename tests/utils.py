@@ -2,8 +2,11 @@ import csv
 import gzip
 import http.server
 import io
+from collections import namedtuple
 
-__all__ = ['TestServer', 'TEST_HTTP_PORT', 'TEST_FILENAME', 'TEST_TVS_DATA', 'TEST_FILENAME_INVALID']
+from src.models import Name
+
+__all__ = ['TestServer', 'TEST_HTTP_PORT', 'TEST_FILENAME', 'TEST_TVS_DATA', 'TEST_FILENAME_INVALID', 'parse_names']
 
 
 TEST_HTTP_PORT = 8333
@@ -54,3 +57,23 @@ def _generate_gzipped_tvs_file_stream():
 class TestServer(http.server.HTTPServer):
     def __init__(self):
         super().__init__(('', TEST_HTTP_PORT), Handler)
+
+
+def parse_dataset(file_path):
+    with open(file_path) as fd:
+        tsv_reader = csv.reader(fd, delimiter='\t')
+        data_set_class = namedtuple('_', next(tsv_reader))
+        for line in tsv_reader:
+            yield data_set_class(*line)
+
+
+def parse_names(file_path):
+    for data_set_class in parse_dataset(file_path):
+        name_line = Name(
+            id=getattr(data_set_class, 'nconst'),
+            primaryName=getattr(data_set_class, 'primaryName'),
+            birthYear=getattr(data_set_class, 'birthYear'),
+            deathYear=getattr(data_set_class, 'deathYear'),
+            primaryProfession=getattr(data_set_class, 'primaryProfession')
+        )
+        yield name_line
