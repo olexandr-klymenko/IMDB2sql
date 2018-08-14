@@ -2,12 +2,8 @@ import csv
 import gzip
 import http.server
 import io
-from collections import namedtuple
 
-from src.models import Name, Title
-
-__all__ = ['TestServer', 'TEST_HTTP_PORT', 'TEST_FILENAME', 'TEST_TVS_DATA', 'TEST_FILENAME_INVALID',
-           'parse_names', 'parse_titles']
+__all__ = ['TestServer', 'TEST_HTTP_PORT', 'TEST_FILENAME', 'TEST_TVS_DATA', 'TEST_FILENAME_INVALID']
 
 
 TEST_HTTP_PORT = 8333
@@ -58,49 +54,3 @@ def _generate_gzipped_tvs_file_stream():
 class TestServer(http.server.HTTPServer):
     def __init__(self):
         super().__init__(('', TEST_HTTP_PORT), Handler)
-
-
-def parse_dataset(file_path):
-    with open(file_path) as fd:
-        tsv_reader = csv.reader(fd, delimiter='\t')
-        data_set_class = namedtuple('_', next(tsv_reader))
-        for line in tsv_reader:
-            yield data_set_class(*line)
-
-
-def parse_names(file_path, get_titles_callback):
-    for data_set_class in parse_dataset(file_path):
-        name_line = Name(
-            id=getattr(data_set_class, 'nconst'),
-            primaryName=getattr(data_set_class, 'primaryName'),
-            birthYear=getattr(data_set_class, 'birthYear'),
-            deathYear=_get_null(getattr(data_set_class, 'deathYear')),
-            primaryProfession=getattr(data_set_class, 'primaryProfession'),
-            titles=get_titles_callback(getattr(data_set_class, 'knownForTitles').split(','))
-        )
-
-        yield name_line
-
-
-def parse_titles(file_path):
-    for data_set_class in parse_dataset(file_path):
-        title_line = Title(
-            id=getattr(data_set_class, 'tconst'),
-            titleType=getattr(data_set_class, 'titleType'),
-            primaryTitle=getattr(data_set_class, 'primaryTitle'),
-            originalTitle=getattr(data_set_class, 'originalTitle'),
-            isAdult=bool(getattr(data_set_class, 'isAdult')),
-            startYear=_get_null(getattr(data_set_class, 'startYear')),
-            endYear=_get_null(getattr(data_set_class, 'endYear')),
-            runtimeMinutes=getattr(data_set_class, 'runtimeMinutes'),
-            genres=getattr(data_set_class, 'genres'),
-        )
-        yield title_line
-
-
-def _get_null(value):
-    if value != '\\N':
-        return value
-
-
-# TODO: Implement DAL class for parsing data_sets into database
