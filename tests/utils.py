@@ -68,15 +68,17 @@ def parse_dataset(file_path):
             yield data_set_class(*line)
 
 
-def parse_names(file_path):
+def parse_names(file_path, get_titles_callback):
     for data_set_class in parse_dataset(file_path):
         name_line = Name(
             id=getattr(data_set_class, 'nconst'),
             primaryName=getattr(data_set_class, 'primaryName'),
             birthYear=getattr(data_set_class, 'birthYear'),
             deathYear=_get_null(getattr(data_set_class, 'deathYear')),
-            primaryProfession=getattr(data_set_class, 'primaryProfession')
+            primaryProfession=getattr(data_set_class, 'primaryProfession'),
+            titles=get_titles_callback(getattr(data_set_class, 'knownForTitles').split(','))
         )
+
         yield name_line
 
 
@@ -101,4 +103,4 @@ def _get_null(value):
         return value
 
 
-# TODO: Handle many to many relations update
+# TODO: Implement DAL class for parsing data_sets into database
