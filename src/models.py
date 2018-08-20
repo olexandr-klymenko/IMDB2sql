@@ -2,7 +2,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy import Column, String, Integer, Boolean, ForeignKey, Table, MetaData
 
-__all__ = ['Title', 'Name']
+__all__ = ['Title', 'Name', 'Principals']
 
 Base = declarative_base(metadata=MetaData())
 
@@ -39,3 +39,19 @@ class Name(Base):
     primaryProfession = Column(String)
 
     titles = relationship("Title", secondary=NameTitle, backref='name')
+
+
+class Principals(Base):
+    __tablename__ = 'principals'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    ordering = Column(Integer)
+    category = Column(String)
+    job = Column(String)
+    characters = Column(String)
+
+    title_id = Column(String, ForeignKey('title.id'))
+    title = relationship("Title", uselist=False)
+
+    name_id = Column(String, ForeignKey('name.id'))
+    name = relationship("Name", uselist=False)

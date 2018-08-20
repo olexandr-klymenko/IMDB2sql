@@ -9,24 +9,26 @@ import src.models as models
 
 
 class ImdbDal:
-    tables = [models.Title, models.Name]
+    tables = [models.Title, models.Name, models.Principals]
     conn_string = 'sqlite:///:memory:'
     echo = True
     session = None
 
-    def __init__(self, titles_path, names_path):
+    def __init__(self, titles_path, names_path, principals_path):
         self.titles_path = titles_path
         self.names_path = names_path
+        self.principals_path = principals_path
 
     def db_init(self, conn_string=None):
         engine = create_engine(conn_string or self.conn_string, echo=self.echo)
-        models.Title.metadata.create_all(bind=engine)
+        models.Base.metadata.create_all(bind=engine)
         session = sessionmaker(bind=engine)
         self.session = session()
 
     def parse_data_sets(self):
         self._insert_dataset(self._parse_titles())
         self._insert_dataset(self._parse_names())
+        self._insert_dataset(self._parse_principals())
         self.session.commit()
 
     def _insert_dataset(self, dataset_iter: Iterator):
@@ -48,13 +50,32 @@ class ImdbDal:
             )
             yield title_line
 
+    def _parse_principals(self):
+        for data_set_class in self._parse_dataset(self.principals_path):
+            principals_line = models.Principals(
+                ordering=getattr(data_set_class, 'ordering'),
+                category=getattr(data_set_class, 'category'),
+                job=self._get_null(getattr(data_set_class, 'job')),
+                characters=self._get_null(getattr(data_set_class, 'characters')),
+                title=self._get_title(getattr(data_set_class, 'tconst')),
+                name=self._get_name(getattr(data_set_class, 'nconst'))
+            )
+            yield principals_line
+
     @staticmethod
     def _parse_dataset(file_path):
         with open(file_path) as fd:
             tsv_reader = csv.reader(fd, delimiter='\t')
             data_set_class = namedtuple('_', next(tsv_reader))
             for line in tsv_reader:
-                yield data_set_class(*line)
+                try:
+                    yield data_set_class(*line)
+                except TypeError:
+                    print(f'Invalid line: {line}')
+                    continue
+                except Exception as err:
+                    print(f'Invalid line: {line}')
+                    raise
 
     def _parse_names(self):
         for data_set_class in self._parse_dataset(self.names_path):
@@ -73,6 +94,14 @@ class ImdbDal:
         query = self.session.query(models.Title)
         query = query.filter(models.Title.id.in_(title_ids))
         return query.all()
+
+    def _get_title(self, title_id: str):
+        query = self.session.query(models.Title).filter(models.Title.id == title_id)
+        return query.one_or_none()
+
+    def _get_name(self, name_id: str):
+        query = self.session.query(models.Name).filter(models.Name.id == name_id)
+        return query.one_or_none()
 
     @staticmethod
     def _get_null(value):
