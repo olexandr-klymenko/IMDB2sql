@@ -1,6 +1,6 @@
 import unittest
 from os.path import join, dirname
-from typing import List
+from typing import List, Tuple
 
 import src.models as models
 from src.dal import ImdbDal
@@ -10,18 +10,28 @@ TITLES_DATASET = 'title.basics.tsv'
 INVALID_TITLES_DATASET = 'invalid_title.basics.tsv'
 NAMES_DATASET = 'name.basics.tsv'
 PRINCIPALS_DATASET = 'title.principals.tsv'
+RATINGS_DATASET = 'title.ratings.tsv'
 
 
 class BaseTestDAL(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        titles_path, names_path, principals_path = cls._get_dataset_paths()
-        cls.dal = ImdbDal(titles_path=titles_path, names_path=names_path, principals_path=principals_path)
+        (titles_path,
+         names_path,
+         principals_path,
+         ratings_path
+         ) = cls._get_dataset_paths()
+        cls.dal = ImdbDal(
+            titles_path=titles_path,
+            names_path=names_path,
+            principals_path=principals_path,
+            ratings_path=ratings_path
+        )
         cls.dal.db_init()
 
     @staticmethod
-    def _get_dataset_paths():
+    def _get_dataset_paths() -> Tuple[str, str, str, str]:
         raise NotImplementedError
 
     @classmethod
@@ -43,7 +53,8 @@ class TestDAL(BaseTestDAL):
         titles_path = join(data_sets_root, TITLES_DATASET)
         names_path = join(data_sets_root, NAMES_DATASET)
         principals_path = join(data_sets_root, PRINCIPALS_DATASET)
-        return titles_path, names_path, principals_path
+        ratings_path = join(data_sets_root, RATINGS_DATASET)
+        return titles_path, names_path, principals_path, ratings_path
 
     def test_names(self):
         query = self.dal.session.query(models.Name).filter(models.Name.id == 'nm0000009').all()
@@ -67,6 +78,14 @@ class TestDAL(BaseTestDAL):
         for principal in query:
             self.assertIn(principal.category, principal.name.primaryProfession.split(','))
 
+    def test_ratings(self):
+        query: List[models.Ratings] = self.dal.session.query(
+            models.Ratings
+        ).filter(models.Ratings.title_id == 'tt0000001').all()
+        self.assertEqual(len(query), 1)
+        self.assertEqual(query[0].averageRating, 5.8)
+        self.assertEqual(query[0].numVotes, 1396)
+
 
 class TestDALWithInvalidDataSet(BaseTestDAL):
 
@@ -76,7 +95,8 @@ class TestDALWithInvalidDataSet(BaseTestDAL):
         titles_path = join(data_sets_root, INVALID_TITLES_DATASET)
         names_path = join(data_sets_root, NAMES_DATASET)
         principals_path = join(data_sets_root, PRINCIPALS_DATASET)
-        return titles_path, names_path, principals_path
+        ratings_path = join(data_sets_root, RATINGS_DATASET)
+        return titles_path, names_path, principals_path, ratings_path
 
     def test_titles(self):
         query: List[models.Title] = self.dal.session.query(

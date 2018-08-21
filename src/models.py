@@ -1,6 +1,6 @@
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
-from sqlalchemy import Column, String, Integer, Boolean, ForeignKey, Table, MetaData
+from sqlalchemy import Column, String, Integer, Float, Boolean, ForeignKey, Table, MetaData
 
 __all__ = ['Title', 'Name', 'Principals']
 
@@ -55,3 +55,14 @@ class Principals(Base):
 
     name_id = Column(String, ForeignKey('name.id'))
     name = relationship("Name", uselist=False)
+
+
+class Ratings(Base):
+    __tablename__ = 'ratings'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    averageRating = Column(Float)
+    numVotes = Column(Integer)
+
+    title_id = Column(String, ForeignKey('title.id'))
+    title = relationship("Title", uselist=False)

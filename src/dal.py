@@ -9,15 +9,16 @@ import src.models as models
 
 
 class ImdbDal:
-    tables = [models.Title, models.Name, models.Principals]
+    tables = [models.Title, models.Name, models.Principals, models.Ratings]
     conn_string = 'sqlite:///:memory:'
     echo = True
     session = None
 
-    def __init__(self, titles_path, names_path, principals_path):
+    def __init__(self, titles_path, names_path, principals_path, ratings_path):
         self.titles_path = titles_path
         self.names_path = names_path
         self.principals_path = principals_path
+        self.ratings_path = ratings_path
 
     def db_init(self, conn_string=None):
         engine = create_engine(conn_string or self.conn_string, echo=self.echo)
@@ -29,6 +30,7 @@ class ImdbDal:
         self._insert_dataset(self._parse_titles())
         self._insert_dataset(self._parse_names())
         self._insert_dataset(self._parse_principals())
+        self._insert_dataset(self._parse_ratings())
         self.session.commit()
 
     def _insert_dataset(self, dataset_iter: Iterator):
@@ -61,6 +63,15 @@ class ImdbDal:
                 name=self._get_name(getattr(data_set_class, 'nconst'))
             )
             yield principals_line
+
+    def _parse_ratings(self):
+        for data_set_class in self._parse_dataset(self.ratings_path):
+            ratings_line = models.Ratings(
+                averageRating=getattr(data_set_class, 'averageRating'),
+                numVotes=getattr(data_set_class, 'numVotes'),
+                title=self._get_title(getattr(data_set_class, 'tconst'))
+            )
+            yield ratings_line
 
     @staticmethod
     def _parse_dataset(file_path):

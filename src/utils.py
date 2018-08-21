@@ -7,7 +7,7 @@ import urllib.request
 from collections import namedtuple
 from multiprocessing import Pool
 from os.path import join, exists
-from typing import List
+from typing import List, Dict
 
 import yaml
 from bs4 import BeautifulSoup
@@ -20,9 +20,13 @@ def get_config(config_path):
         return yaml.load(cfg)
 
 
-def get_links(dataset_index_page_content: str, datasets_file_pattern: str) -> List:
+def get_links(dataset_index_page_content: str, config: Dict) -> List:
     bs_obj = BeautifulSoup(dataset_index_page_content, "html.parser")
-    return [link.get('href') for link in bs_obj.find_all('a') if link.get('href').endswith(datasets_file_pattern)]
+    return [link.get('href') for link in bs_obj.find_all('a') if _filter_links(link, config)]
+
+
+def _filter_links(link, config) -> bool:
+    return urllib.parse.urlparse(link.get('href')).path.strip("/") in config['data_sets']
 
 
 DataSet = namedtuple('DataSet', ['url', 'gzipped', 'extracted'])
@@ -69,3 +73,6 @@ class DataSetsHandler:
 
             if exists(data_set.extracted):
                 os.remove(data_set.extracted)
+
+
+# TODO: Implement GraphQL

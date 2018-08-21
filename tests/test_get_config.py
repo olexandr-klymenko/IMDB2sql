@@ -10,7 +10,11 @@ class TestGetConfig(unittest.TestCase):
     def setUp(self):
         config_content = """
         data_sets_url: "https://datasets.imdbws.com"
-        data_sets_file_pattern: ".tsv.gz"
+        data_sets:
+            - "name.basics.tsv.gz"
+            - "title.basics.tsv.gz"
+            - "title.principals.tsv.gz"
+            - "title.ratings.tsv.gz"
         """
         _, self.config_path = tempfile.mkstemp()
         with open(self.config_path, 'w') as cfg:
@@ -22,4 +26,4 @@ class TestGetConfig(unittest.TestCase):
     def test_get_config(self):
         config = get_config(self.config_path)
         self.assertEqual(config['data_sets_url'], "https://datasets.imdbws.com")
-        self.assertEqual(config['data_sets_file_pattern'], ".tsv.gz")
+        self.assertEqual(len(config['data_sets']), 4)

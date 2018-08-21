@@ -1,5 +1,6 @@
 import unittest
 
+import yaml
 import validators
 
 from src.utils import get_links
@@ -26,10 +27,17 @@ Documentation for these data files can be found on <a href=http://www.imdb.com/i
   </body>
 </html>
         """
-        self.datasets_file_pattern = ".tsv.gz"
+        self.config = yaml.load("""
+data_sets_url: "https://datasets.imdbws.com"
+data_sets:
+  - "name.basics.tsv.gz"
+  - "title.basics.tsv.gz"
+  - "title.principals.tsv.gz"
+  - "title.ratings.tsv.gz"
+""")
 
     def test_get_links(self):
-        links = get_links(self.dataset_index_page_content, self.datasets_file_pattern)
+        links = get_links(self.dataset_index_page_content, self.config)
         self.assertIsNotNone(links)
         self.assertIsInstance(links, list)
         self.assertGreater(len(links), 0)
@@ -39,4 +47,4 @@ Documentation for these data files can be found on <a href=http://www.imdb.com/i
         self.assertTrue(len(set(are_valid_urls)) == 1)
         self.assertTrue(are_valid_urls[0])
 
-        self.assertTrue(len(links), len([link for link in links if link.endswith(self.datasets_file_pattern)]))
+        self.assertTrue(len(links), len(self.config['data_sets']))

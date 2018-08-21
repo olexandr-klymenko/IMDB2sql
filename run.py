@@ -10,7 +10,7 @@ with urllib.request.urlopen(config['data_sets_url']) as response:
     imdb_page_content = response.read()
 
 
-handler = DataSetsHandler(get_links(imdb_page_content, config['data_sets_file_pattern']))
+handler = DataSetsHandler(get_links(imdb_page_content, config))
 
 # handler.download()
 
