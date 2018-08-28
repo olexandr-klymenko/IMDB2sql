@@ -23,10 +23,12 @@ class BaseTestDAL(unittest.TestCase):
          ratings_path
          ) = cls._get_dataset_paths()
         cls.dal = ImdbDal(
-            titles_path=titles_path,
-            names_path=names_path,
-            principals_path=principals_path,
-            ratings_path=ratings_path
+            dataset_paths={
+                'title': titles_path,
+                'name': names_path,
+                'principals': principals_path,
+                'ratings': ratings_path
+            }
         )
         cls.dal.db_init()
 

@@ -29,11 +29,11 @@ Documentation for these data files can be found on <a href=http://www.imdb.com/i
         """
         self.config = yaml.load("""
 data_sets_url: "https://datasets.imdbws.com"
-data_sets:
-  - "name.basics.tsv.gz"
-  - "title.basics.tsv.gz"
-  - "title.principals.tsv.gz"
-  - "title.ratings.tsv.gz"
+dataset_paths:
+    title: "name.basics.tsv.gz"
+    name: "name.basics.tsv.gz"
+    principals: "title.principals.tsv.gz"
+    ratings: "title.ratings.tsv.gz"
 """)
 
     def test_get_links(self):
@@ -47,4 +47,4 @@ data_sets:
         self.assertTrue(len(set(are_valid_urls)) == 1)
         self.assertTrue(are_valid_urls[0])
 
-        self.assertTrue(len(links), len(self.config['data_sets']))
+        self.assertTrue(len(links), len(self.config['dataset_paths']))

@@ -26,7 +26,7 @@ def get_links(dataset_index_page_content: str, config: Dict) -> List:
 
 
 def _filter_links(link, config) -> bool:
-    return urllib.parse.urlparse(link.get('href')).path.strip("/") in config['data_sets']
+    return urllib.parse.urlparse(link.get('href')).path.strip("/") in config['dataset_paths'].values()
 
 
 DataSet = namedtuple('DataSet', ['url', 'gzipped', 'extracted'])

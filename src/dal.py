@@ -1,6 +1,6 @@
 import csv
 from collections import namedtuple
-from typing import Iterable, Iterator
+from typing import Iterable, Iterator, Dict
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -9,36 +9,35 @@ import src.models as models
 
 
 class ImdbDal:
-    tables = [models.Title, models.Name, models.Principals, models.Ratings]
     conn_string = 'sqlite:///:memory:'
     echo = True
     session = None
+    dataset_paths: Dict = None
 
-    def __init__(self, titles_path, names_path, principals_path, ratings_path):
-        self.titles_path = titles_path
-        self.names_path = names_path
-        self.principals_path = principals_path
-        self.ratings_path = ratings_path
+    def __init__(self, dataset_paths: Dict=None):
+        self.engine = None
+        self.metadata = None
+        self.dataset_paths = self.dataset_paths or dataset_paths
 
     def db_init(self, conn_string=None):
-        engine = create_engine(conn_string or self.conn_string, echo=self.echo)
-        models.Base.metadata.create_all(bind=engine)
-        session = sessionmaker(bind=engine)
+        self.engine = create_engine(conn_string or self.conn_string, echo=self.echo)
+        self.metadata = models.Base.metadata
+        self.metadata.create_all(bind=self.engine)
+        self.metadata.reflect(bind=self.engine)
+        session = sessionmaker(bind=self.engine)
         self.session = session()
 
     def parse_data_sets(self):
-        self._insert_dataset(self._parse_titles())
-        self._insert_dataset(self._parse_names())
-        self._insert_dataset(self._parse_principals())
-        self._insert_dataset(self._parse_ratings())
+        for table_name, dataset_path in self.dataset_paths.items():
+            self._insert_dataset(getattr(self, f'_parse_{table_name}')(dataset_path))
         self.session.commit()
 
     def _insert_dataset(self, dataset_iter: Iterator):
         for line in dataset_iter:
             self.session.add(line)
 
-    def _parse_titles(self):
-        for data_set_class in self._parse_dataset(self.titles_path):
+    def _parse_title(self, dataset_path):
+        for data_set_class in self._parse_dataset(dataset_path):
             title_line = models.Title(
                 id=getattr(data_set_class, 'tconst'),
                 titleType=getattr(data_set_class, 'titleType'),
@@ -52,8 +51,8 @@ class ImdbDal:
             )
             yield title_line
 
-    def _parse_principals(self):
-        for data_set_class in self._parse_dataset(self.principals_path):
+    def _parse_principals(self, dataset_path):
+        for data_set_class in self._parse_dataset(dataset_path):
             principals_line = models.Principals(
                 ordering=getattr(data_set_class, 'ordering'),
                 category=getattr(data_set_class, 'category'),
@@ -64,8 +63,8 @@ class ImdbDal:
             )
             yield principals_line
 
-    def _parse_ratings(self):
-        for data_set_class in self._parse_dataset(self.ratings_path):
+    def _parse_ratings(self, dataset_path):
+        for data_set_class in self._parse_dataset(dataset_path):
             ratings_line = models.Ratings(
                 averageRating=getattr(data_set_class, 'averageRating'),
                 numVotes=getattr(data_set_class, 'numVotes'),
@@ -88,8 +87,8 @@ class ImdbDal:
                     print(f'Invalid line: {line}')
                     raise
 
-    def _parse_names(self):
-        for data_set_class in self._parse_dataset(self.names_path):
+    def _parse_name(self, dataset_path):
+        for data_set_class in self._parse_dataset(dataset_path):
             name_line = models.Name(
                 id=getattr(data_set_class, 'nconst'),
                 primaryName=getattr(data_set_class, 'primaryName'),
@@ -120,5 +119,5 @@ class ImdbDal:
             return value
 
     def clean_up(self):
-        [self.session.query(table).delete() for table in self.tables]
-        self.session.commit()
+        for table in reversed(self.metadata.sorted_tables):
+            self.engine.execute(table.delete())
