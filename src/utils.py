@@ -33,7 +33,8 @@ DataSet = namedtuple('DataSet', ['url', 'gzipped', 'extracted'])
 
 
 class DataSetsHandler:
-    def __init__(self, urls):
+    def __init__(self, urls, root=None):
+        self.root = root or tempfile.gettempdir()
         self.data_sets: List[DataSet] = []
         self._init_data_sets(urls)
 
@@ -43,8 +44,8 @@ class DataSetsHandler:
             file_path_re = DATA_SET_FILENAME_PATTERN.search(path)
             if file_path_re is None:
                 raise Exception("Data set filename doesn't match")
-            gzipped = join(tempfile.gettempdir(), path.lstrip('/'))
-            extracted = join(tempfile.gettempdir(), file_path_re.group(1))
+            gzipped = join(self.root, path.lstrip('/'))
+            extracted = join(self.root, file_path_re.group(1))
             self.data_sets.append(DataSet(gzipped=gzipped, extracted=extracted, url=url))
 
     def download(self):

@@ -1,5 +1,8 @@
 import csv
 from collections import namedtuple
+from os.path import join
+import sqlite3
+import tempfile
 from typing import Iterable, Iterator, Dict
 
 from sqlalchemy import create_engine
@@ -7,20 +10,30 @@ from sqlalchemy.orm import sessionmaker
 
 import src.models as models
 
+SQLITE_TYPE = 'sqlite:///'
+
 
 class ImdbDal:
-    conn_string = 'sqlite:///:memory:'
-    echo = True
+    db_type = SQLITE_TYPE
+    db_path = ':memory:'
+    echo = False
     session = None
     dataset_paths: Dict = None
 
-    def __init__(self, dataset_paths: Dict=None):
+    def __init__(self, dataset_paths: Dict=None, root=None):
         self.engine = None
         self.metadata = None
         self.dataset_paths = self.dataset_paths or dataset_paths
+        self.root = root or tempfile.gettempdir()
 
-    def db_init(self, conn_string=None):
-        self.engine = create_engine(conn_string or self.conn_string, echo=self.echo)
+    def db_init(self, db_type=None, db_path=None):
+        self.db_path = db_path or self.db_path
+        self.db_type = db_type or self.db_type
+
+        if db_type == SQLITE_TYPE:
+            sqlite3.connect(self.db_path)
+
+        self.engine = create_engine(f'{self.db_type}{self.db_path}', echo=self.echo)
         self.metadata = models.Base.metadata
         self.metadata.create_all(bind=self.engine)
         self.metadata.reflect(bind=self.engine)
@@ -28,11 +41,15 @@ class ImdbDal:
         self.session = session()
 
     def parse_data_sets(self):
+        if self.session is None:
+            raise Exception('Database session is not initialized')
         for table_name, dataset_path in self.dataset_paths.items():
-            self._insert_dataset(getattr(self, f'_parse_{table_name}')(dataset_path))
+            print(f"Parsing {dataset_path} into '{table_name}' table ...")
+            self._insert_dataset(getattr(self, f'_parse_{table_name}')(join(self.root, dataset_path)))
         self.session.commit()
 
     def _insert_dataset(self, dataset_iter: Iterator):
+        # TODO: implement commiting bunches
         for line in dataset_iter:
             self.session.add(line)
 
