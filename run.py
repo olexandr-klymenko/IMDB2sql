@@ -34,8 +34,9 @@ def main():
     #
     # handler.extract()
 
-    dal = ImdbDal(dataset_paths=DATASET_PATHS, root=ROOT)
+    dal = ImdbDal(dataset_paths=DATASET_PATHS, root=ROOT, batch_size=10_000)
     dal.db_init(db_path=join(ROOT, 'imdb.db'))
+    # dal.db_init()
     dal.parse_data_sets()
 
 

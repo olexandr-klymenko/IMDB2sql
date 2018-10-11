@@ -1,20 +1,20 @@
 import csv
-from collections import namedtuple
-from os.path import join, getsize, exists
 import os
 import sqlite3
-import sys
 import tempfile
+from collections import namedtuple
+from os.path import join, getsize, exists
 from typing import Iterable, Iterator, Dict
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 import src.models as models
+from src.utils import overwrite_upper_line
 
 SQLITE_TYPE = 'sqlite:///'
-CURSOR_UP_ONE = '\x1b[1A'
-ERASE_LINE = '\x1b[2K'
+
+DEFAULT_BATCH_SIZE = 100000
 
 
 class ImdbDal:
@@ -23,15 +23,17 @@ class ImdbDal:
     echo = False
     session = None
     dataset_paths: Dict = None
+    batch_size = DEFAULT_BATCH_SIZE
 
-    def __init__(self, dataset_paths: Dict=None, root=None):
+    def __init__(self, dataset_paths: Dict=None, root=None, batch_size=None):
         self.engine = None
         self.metadata = None
         self.dataset_paths = self.dataset_paths or dataset_paths
         self.root = root or tempfile.gettempdir()
+        self.batch_size = batch_size or self.batch_size
 
     def db_init(self, db_type=None, db_path=None):
-        if exists(db_path):
+        if db_type is not None and exists(db_path):
             os.remove(db_path)
         self.db_path = db_path or self.db_path
         self.db_type = db_type or self.db_type
@@ -54,19 +56,19 @@ class ImdbDal:
             self._insert_dataset(getattr(self, f'_parse_{table_name}')(join(self.root, dataset_path)), status_line)
         self.session.commit()
 
-    def _insert_dataset(self, dataset_iter: Iterator, status_line: str, bunch_size=100000):
+    def _insert_dataset(self, dataset_iter: Iterator, status_line: str):
         start_progress = 0
         print(f'{status_line}: 0%')
         for idx, (line, progress) in enumerate(dataset_iter):
             self.session.add(line)
             if progress - start_progress > 0.01:
                 start_progress += 0.01
-                sys.stdout.write(CURSOR_UP_ONE)
-                sys.stdout.write(ERASE_LINE)
-                print(f'{status_line}:{progress:.2f}%')
+                overwrite_upper_line(f'{status_line}:{progress:.2f}%')
 
-            if idx % bunch_size == 0:
+            if self.batch_size > 0 and idx > 0 and idx % self.batch_size == 0:
+                overwrite_upper_line(f'{status_line}:{progress:.2f}% committing ...')
                 self.session.commit()
+                overwrite_upper_line(f'{status_line}:{progress:.2f}%')
 
     def _parse_title(self, dataset_path):
         for data_set_class, progress in self._parse_dataset(dataset_path):

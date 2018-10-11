@@ -7,12 +7,15 @@ import urllib.request
 from collections import namedtuple
 from multiprocessing import Pool
 from os.path import join, exists
+import sys
 from typing import List, Dict
 
 import yaml
 from bs4 import BeautifulSoup
 
 DATA_SET_FILENAME_PATTERN = re.compile('^/(.*).gz')
+CURSOR_UP_ONE = '\x1b[1A'
+ERASE_LINE = '\x1b[2K'
 
 
 def get_config(config_path):
@@ -77,3 +80,10 @@ class DataSetsHandler:
 
 
 # TODO: Implement GraphQL
+
+def overwrite_upper_line(content):
+    sys.stdout.write(CURSOR_UP_ONE)
+    sys.stdout.write(ERASE_LINE)
+    print(content)
+
+
