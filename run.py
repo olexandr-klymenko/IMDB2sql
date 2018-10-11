@@ -19,6 +19,7 @@ DATASET_PATHS = {'title': TITLES_DATASET,
                  'ratings': RATINGS_DATASET}
 
 ROOT = '/home/oklymenko/Downloads/IMDB'
+# ROOT = '/home/oklymenko/Documents/IMDB2sql/tests/datasets'
 
 
 @profile
@@ -34,7 +35,7 @@ def main():
     #
     # handler.extract()
 
-    dal = ImdbDal(dataset_paths=DATASET_PATHS, root=ROOT, batch_size=10_000)
+    dal = ImdbDal(dataset_paths=DATASET_PATHS, root=ROOT, batch_size=1_000_000)
     dal.db_init(db_path=join(ROOT, 'imdb.db'))
     # dal.db_init()
     dal.parse_data_sets()

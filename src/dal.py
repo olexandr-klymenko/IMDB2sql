@@ -33,7 +33,7 @@ class ImdbDal:
         self.batch_size = batch_size or self.batch_size
 
     def db_init(self, db_type=None, db_path=None):
-        if db_type is not None and exists(db_path):
+        if db_path is not None and exists(db_path):
             os.remove(db_path)
         self.db_path = db_path or self.db_path
         self.db_type = db_type or self.db_type
@@ -63,12 +63,13 @@ class ImdbDal:
             self.session.add(line)
             if progress - start_progress > 0.01:
                 start_progress += 0.01
-                overwrite_upper_line(f'{status_line}:{progress:.2f}%')
+                overwrite_upper_line(f'{status_line}: {progress:.2f}%')
 
             if self.batch_size > 0 and idx > 0 and idx % self.batch_size == 0:
-                overwrite_upper_line(f'{status_line}:{progress:.2f}% committing ...')
+                overwrite_upper_line(f'{status_line}: {progress :.2f}% committing ...')
                 self.session.commit()
-                overwrite_upper_line(f'{status_line}:{progress:.2f}%')
+                overwrite_upper_line(f'{status_line}: {progress :.2f}%')
+        print(f'{status_line}: 100%')
 
     def _parse_title(self, dataset_path):
         for data_set_class, progress in self._parse_dataset(dataset_path):
@@ -138,9 +139,11 @@ class ImdbDal:
             yield name_line, progress
 
     def _get_titles(self, title_ids: Iterable):
-        query = self.session.query(models.Title)
-        query = query.filter(models.Title.id.in_(title_ids))
-        return query.all()
+        titles = [self._get_title(id_) for id_ in title_ids]
+        return [title for title in titles if title]
+        # query = self.session.query(models.Title)
+        # query = query.filter(models.Title.id.in_(title_ids))
+        # return query.all()
 
     def _get_title(self, title_id: str):
         query = self.session.query(models.Title).filter(models.Title.id == title_id)
