@@ -1,4 +1,6 @@
 PyYAML
 beautifulsoup4
+mysql-connector-python
+psycopg2
 validators
 SQLAlchemy

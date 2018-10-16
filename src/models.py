@@ -16,15 +16,15 @@ NameTitle = Table('NameTitle',
 class Title(Base):
     __tablename__ = 'title'
 
-    id = Column(String, primary_key=True)
-    titleType = Column(String)
-    primaryTitle = Column(String)
-    originalTitle = Column(String)
+    id = Column(Integer, primary_key=True)
+    titleType = Column(String(30))
+    primaryTitle = Column(String(300))
+    originalTitle = Column(String(300))
     isAdult = Column(Boolean)
     startYear = Column(Integer)
     endYear = Column(Integer, nullable=True)
     runtimeMinutes = Column(Integer)
-    genres = Column(String)
+    genres = Column(String(200))
 
     names = relationship("Name", secondary=NameTitle, backref='title')
 
@@ -32,11 +32,11 @@ class Title(Base):
 class Name(Base):
     __tablename__ = 'name'
 
-    id = Column(String, primary_key=True)
-    primaryName = Column(String)
+    id = Column(Integer, primary_key=True)
+    primaryName = Column(String(30))
     birthYear = Column(Integer)
     deathYear = Column(Integer, nullable=True)
-    primaryProfession = Column(String)
+    primaryProfession = Column(String(30))
 
     titles = relationship("Title", secondary=NameTitle, backref='name')
 
@@ -46,14 +46,14 @@ class Principals(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     ordering = Column(Integer)
-    category = Column(String)
-    job = Column(String)
-    characters = Column(String)
+    category = Column(String(30))
+    job = Column(String(30))
+    characters = Column(String(30))
 
-    title_id = Column(String, ForeignKey('title.id'))
+    title_id = Column(Integer, ForeignKey('title.id'))
     title = relationship("Title", uselist=False)
 
-    name_id = Column(String, ForeignKey('name.id'))
+    name_id = Column(Integer, ForeignKey('name.id'))
     name = relationship("Name", uselist=False)
 
 
@@ -64,5 +64,5 @@ class Ratings(Base):
     averageRating = Column(Float)
     numVotes = Column(Integer)
 
-    title_id = Column(String, ForeignKey('title.id'))
+    title_id = Column(Integer, ForeignKey('title.id'))
     title = relationship("Title", uselist=False)

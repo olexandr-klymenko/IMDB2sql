@@ -18,7 +18,8 @@ DATASET_PATHS = {'title': TITLES_DATASET,
                  'principals': PRINCIPALS_DATASET,
                  'ratings': RATINGS_DATASET}
 
-ROOT = '/home/oklymenko/Downloads/IMDB'
+# ROOT = '/home/oklymenko/Downloads/IMDB'
+ROOT = '/home/oleksandr/Downloads/IMDB'
 # ROOT = '/home/oklymenko/Documents/IMDB2sql/tests/datasets'
 
 
@@ -35,10 +36,14 @@ def main():
     #
     # handler.extract()
 
-    dal = ImdbDal(dataset_paths=DATASET_PATHS, root=ROOT, batch_size=1_000_000)
-    dal.db_init(db_path=join(ROOT, 'imdb.db'))
+    dal = ImdbDal(dataset_paths=DATASET_PATHS, root=ROOT, batch_size=100_000)
+    # dal.db_init(db_path=join(ROOT, 'imdb.db'))
     # dal.db_init()
+    # dal.db_init(db_type='postgresql://', db_path='postgres@127.0.0.1:5432/postgres')
+    dal.db_init(db_type='mysql+mysqlconnector://', db_path='root:mysql@127.0.0.1:3306/mysql')
     dal.parse_data_sets()
+
+# TODO: implement skipping existent tables
 
 
 if __name__ == '__main__':

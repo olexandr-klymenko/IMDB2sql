@@ -87,3 +87,10 @@ def overwrite_upper_line(content):
     print(content)
 
 
+def get_int(id_: str) -> int:
+    """
+    Convert string id like tt0000002 to integer 2
+    :param id_: string id
+    :return: integer id
+    """
+    return int(id_[2:])

@@ -10,7 +10,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 import src.models as models
-from src.utils import overwrite_upper_line
+from src.utils import overwrite_upper_line, get_int
 
 SQLITE_TYPE = 'sqlite:///'
 
@@ -74,14 +74,14 @@ class ImdbDal:
     def _parse_title(self, dataset_path):
         for data_set_class, progress in self._parse_dataset(dataset_path):
             title_line = models.Title(
-                id=getattr(data_set_class, 'tconst'),
+                id=get_int(getattr(data_set_class, 'tconst')),
                 titleType=getattr(data_set_class, 'titleType'),
                 primaryTitle=getattr(data_set_class, 'primaryTitle'),
                 originalTitle=getattr(data_set_class, 'originalTitle'),
                 isAdult=bool(getattr(data_set_class, 'isAdult')),
                 startYear=self._get_null(getattr(data_set_class, 'startYear')),
                 endYear=self._get_null(getattr(data_set_class, 'endYear')),
-                runtimeMinutes=getattr(data_set_class, 'runtimeMinutes'),
+                runtimeMinutes=self._get_null(getattr(data_set_class, 'runtimeMinutes')),
                 genres=getattr(data_set_class, 'genres'),
             )
             yield title_line, progress
@@ -128,7 +128,7 @@ class ImdbDal:
     def _parse_name(self, dataset_path):
         for data_set_class, progress in self._parse_dataset(dataset_path):
             name_line = models.Name(
-                id=getattr(data_set_class, 'nconst'),
+                id=get_int(getattr(data_set_class, 'nconst')),
                 primaryName=getattr(data_set_class, 'primaryName'),
                 birthYear=getattr(data_set_class, 'birthYear'),
                 deathYear=self._get_null(getattr(data_set_class, 'deathYear')),
@@ -146,11 +146,11 @@ class ImdbDal:
         # return query.all()
 
     def _get_title(self, title_id: str):
-        query = self.session.query(models.Title).filter(models.Title.id == title_id)
+        query = self.session.query(models.Title).filter(models.Title.id == get_int(title_id))
         return query.one_or_none()
 
     def _get_name(self, name_id: str):
-        query = self.session.query(models.Name).filter(models.Name.id == name_id)
+        query = self.session.query(models.Name).filter(models.Name.id == get_int(name_id))
         return query.one_or_none()
 
     @staticmethod
