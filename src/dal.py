@@ -4,37 +4,41 @@ import sqlite3
 import tempfile
 from collections import namedtuple
 from os.path import join, getsize, exists
-from typing import Iterable, Iterator, Dict
+from typing import Iterable, Iterator, Dict, Union, List
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
+from src.constants import DATASET_PATHS
 import src.models as models
 from src.utils import overwrite_upper_line, get_int
 
 SQLITE_TYPE = 'sqlite:///'
 
-DEFAULT_BATCH_SIZE = 100000
+DEFAULT_BATCH_SIZE = 100_000
 
 
 class ImdbDal:
-    db_uri = None
-    echo = False
-    session = None
-    dataset_paths: Dict = None
-    batch_size = DEFAULT_BATCH_SIZE
-
-    def __init__(self, dataset_paths: Dict=None, root=None, batch_size=None):
+    def __init__(self, dataset_paths: List=DATASET_PATHS, root=None, batch_size=DEFAULT_BATCH_SIZE, resume=None):
         self.engine = None
         self.metadata = None
-        self.dataset_paths = self.dataset_paths or dataset_paths
+        self.resume = resume
+        if self.resume is not None:
+            idx = [el[0] for el in dataset_paths].index(self.resume)
+            self.dataset_paths = dataset_paths[idx:]
+        else:
+            self.dataset_paths = dataset_paths
+
         self.root = root or tempfile.gettempdir()
-        self.batch_size = batch_size or self.batch_size
+        self.batch_size = batch_size
+        self.echo = False
+        self.db_uri = None
+        self.session = None
 
     def db_init(self, db_uri: str):
         if db_uri.endswith('.db') or db_uri.startswith(SQLITE_TYPE):
             sqlite_path = db_uri.split('///')[1]
-            if exists(sqlite_path):
+            if exists(sqlite_path) and self.resume is None:
                 os.remove(sqlite_path)
             sqlite3.connect(db_uri.split('///')[1])
 
@@ -50,7 +54,7 @@ class ImdbDal:
     def parse_data_sets(self):
         if self.session is None:
             raise Exception('Database session is not initialized')
-        for table_name, dataset_path in self.dataset_paths.items():
+        for table_name, dataset_path in self.dataset_paths:
             status_line = f"Parsing {dataset_path} into '{table_name}' table ..."
             self._insert_dataset(getattr(self, f'_parse_{table_name}')(join(self.root, dataset_path)), status_line)
         self.session.commit()

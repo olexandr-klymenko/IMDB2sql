@@ -5,19 +5,9 @@ from os.path import join
 
 from memory_profiler import profile
 
+from src.constants import DATASET_PATHS
 from src.dal import ImdbDal
 from src.utils import get_config, get_links, DataSetsHandler
-
-TITLES_DATASET = 'title.basics.tsv'
-NAMES_DATASET = 'name.basics.tsv'
-PRINCIPALS_DATASET = 'title.principals.tsv'
-RATINGS_DATASET = 'title.ratings.tsv'
-
-
-DATASET_PATHS = {'title': TITLES_DATASET,
-                 'name': NAMES_DATASET,
-                 'principals': PRINCIPALS_DATASET,
-                 'ratings': RATINGS_DATASET}
 
 ROOT = '/home/oklymenko/Downloads/IMDB'
 
@@ -38,11 +28,11 @@ def main(args):
             handler.extract()
 
     if args.parse:
-        dal = ImdbDal(dataset_paths=DATASET_PATHS, root=args.root, batch_size=args.batch)
+        dal = ImdbDal(dataset_paths=DATASET_PATHS, root=args.root, batch_size=args.batch, resume=args.resume)
         dal.db_init(db_uri=args.dburi)
         dal.parse_data_sets()
 
-# TODO: implement skipping existent tables
+# TODO: implement resumed table drop if exists
 
 
 if __name__ == '__main__':
@@ -57,5 +47,7 @@ if __name__ == '__main__':
                                       "'postgresql://postgres@127.0.0.1:5432/postgres',\n"
                                       "'mysql+mysqlconnector://root:mysql@127.0.0.1:3306/mysql',\n"
                                       "'sqlite:///imdb.db'")
+    cmd_line_parser.add_argument('--resume', choices=[None, 'name', 'principals', 'ratings'], default=None,
+                                 help='Start parsing not from first table')
     args = cmd_line_parser.parse_args()
     main(args)
