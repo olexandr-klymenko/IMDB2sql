@@ -18,8 +18,7 @@ DEFAULT_BATCH_SIZE = 100000
 
 
 class ImdbDal:
-    db_type = SQLITE_TYPE
-    db_path = ':memory:'
+    db_uri = None
     echo = False
     session = None
     dataset_paths: Dict = None
@@ -32,16 +31,16 @@ class ImdbDal:
         self.root = root or tempfile.gettempdir()
         self.batch_size = batch_size or self.batch_size
 
-    def db_init(self, db_type=None, db_path=None):
-        if db_path is not None and exists(db_path):
-            os.remove(db_path)
-        self.db_path = db_path or self.db_path
-        self.db_type = db_type or self.db_type
+    def db_init(self, db_uri: str):
+        if db_uri.endswith('.db') or db_uri.startswith(SQLITE_TYPE):
+            sqlite_path = db_uri.split('///')[1]
+            if exists(sqlite_path):
+                os.remove(sqlite_path)
+            sqlite3.connect(db_uri.split('///')[1])
 
-        if db_type == SQLITE_TYPE:
-            sqlite3.connect(self.db_path)
+        self.db_uri = db_uri or self.db_uri
 
-        self.engine = create_engine(f'{self.db_type}{self.db_path}', echo=self.echo)
+        self.engine = create_engine(f'{self.db_uri}', echo=self.echo)
         self.metadata = models.Base.metadata
         self.metadata.create_all(bind=self.engine)
         self.metadata.reflect(bind=self.engine)
@@ -69,7 +68,7 @@ class ImdbDal:
                 overwrite_upper_line(f'{status_line}: {progress :.2f}% committing ...')
                 self.session.commit()
                 overwrite_upper_line(f'{status_line}: {progress :.2f}%')
-        print(f'{status_line}: 100%')
+        print(f'{status_line}: 100% Done')
 
     def _parse_title(self, dataset_path):
         for data_set_class, progress in self._parse_dataset(dataset_path):
@@ -141,9 +140,6 @@ class ImdbDal:
     def _get_titles(self, title_ids: Iterable):
         titles = [self._get_title(id_) for id_ in title_ids]
         return [title for title in titles if title]
-        # query = self.session.query(models.Title)
-        # query = query.filter(models.Title.id.in_(title_ids))
-        # return query.all()
 
     def _get_title(self, title_id: str):
         query = self.session.query(models.Title).filter(models.Title.id == get_int(title_id))

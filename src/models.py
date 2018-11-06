@@ -18,8 +18,8 @@ class Title(Base):
 
     id = Column(Integer, primary_key=True)
     titleType = Column(String(30))
-    primaryTitle = Column(String(300))
-    originalTitle = Column(String(300))
+    primaryTitle = Column(String(400))
+    originalTitle = Column(String(400))
     isAdult = Column(Boolean)
     startYear = Column(Integer)
     endYear = Column(Integer, nullable=True)

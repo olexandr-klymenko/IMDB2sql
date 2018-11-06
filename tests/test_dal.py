@@ -30,7 +30,7 @@ class BaseTestDAL(unittest.TestCase):
                 'ratings': ratings_path
             }
         )
-        cls.dal.db_init()
+        cls.dal.db_init('sqlite:///:memory:')
 
     @staticmethod
     def _get_dataset_paths() -> Tuple[str, str, str, str]:
