@@ -1,25 +1,21 @@
 import csv
 import os
 import sqlite3
-import tempfile
 from collections import namedtuple
 from os.path import join, getsize, exists
-from typing import Iterable, Iterator, Dict, Union, List
+from typing import Iterable, Iterator, List
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from src.constants import DATASET_PATHS
 import src.models as models
 from src.utils import overwrite_upper_line, get_int
 
 SQLITE_TYPE = 'sqlite:///'
 
-DEFAULT_BATCH_SIZE = 100_000
-
 
 class ImdbDal:
-    def __init__(self, dataset_paths: List=DATASET_PATHS, root=None, batch_size=DEFAULT_BATCH_SIZE, resume=None):
+    def __init__(self, root, resume, batch_size: int, dataset_paths: List):
         self.engine = None
         self.metadata = None
         self.resume = resume
@@ -29,7 +25,7 @@ class ImdbDal:
         else:
             self.dataset_paths = dataset_paths
 
-        self.root = root or tempfile.gettempdir()
+        self.root = root
         self.batch_size = batch_size
         self.echo = False
         self.db_uri = None
@@ -56,8 +52,13 @@ class ImdbDal:
             raise Exception('Database session is not initialized')
         for table_name, dataset_path in self.dataset_paths:
             status_line = f"Parsing {dataset_path} into '{table_name}' table ..."
-            self._insert_dataset(getattr(self, f'_parse_{table_name}')(join(self.root, dataset_path)), status_line)
+            parse_handler = self._get_parse_handler(table_name)
+            dataset = parse_handler(join(self.root, dataset_path))
+            self._insert_dataset(dataset, status_line)
         self.session.commit()
+
+    def _get_parse_handler(self, table_name):
+        return getattr(self, f'_parse_{table_name}')
 
     def _insert_dataset(self, dataset_iter: Iterator, status_line: str):
         start_progress = 0
@@ -68,13 +69,17 @@ class ImdbDal:
                 start_progress += 0.01
                 overwrite_upper_line(f'{status_line}: {progress:.2f}%')
 
-            if self.batch_size > 0 and idx > 0 and idx % self.batch_size == 0:
+            if self._is_time_for_commit(idx):
                 overwrite_upper_line(f'{status_line}: {progress :.2f}% committing ...')
                 self.session.commit()
                 overwrite_upper_line(f'{status_line}: {progress :.2f}%')
         print(f'{status_line}: 100% Done')
 
+    def _is_time_for_commit(self, idx):
+        return self.batch_size > 0 and idx > 0 and idx % self.batch_size == 0
+
     def _parse_title(self, dataset_path):
+        self.clean_table(models.Title)
         for data_set_class, progress in self._parse_dataset(dataset_path):
             title_line = models.Title(
                 id=get_int(getattr(data_set_class, 'tconst')),
@@ -90,6 +95,7 @@ class ImdbDal:
             yield title_line, progress
 
     def _parse_principals(self, dataset_path):
+        self.clean_table(models.Principals)
         for data_set_class, progress in self._parse_dataset(dataset_path):
             principals_line = models.Principals(
                 ordering=getattr(data_set_class, 'ordering'),
@@ -102,6 +108,7 @@ class ImdbDal:
             yield principals_line, progress
 
     def _parse_ratings(self, dataset_path):
+        self.clean_table(models.Ratings)
         for data_set_class, progress in self._parse_dataset(dataset_path):
             ratings_line = models.Ratings(
                 averageRating=getattr(data_set_class, 'averageRating'),
@@ -129,6 +136,7 @@ class ImdbDal:
                     raise
 
     def _parse_name(self, dataset_path):
+        self.clean_table(models.Name)
         for data_set_class, progress in self._parse_dataset(dataset_path):
             name_line = models.Name(
                 id=get_int(getattr(data_set_class, 'nconst')),
@@ -143,11 +151,16 @@ class ImdbDal:
 
     def _get_titles(self, title_ids: Iterable):
         titles = [self._get_title(id_) for id_ in title_ids]
-        return [title for title in titles if title]
+        return [title for title in titles if title if title is not None]
 
     def _get_title(self, title_id: str):
-        query = self.session.query(models.Title).filter(models.Title.id == get_int(title_id))
-        return query.one_or_none()
+        try:
+            _title_id = get_int(title_id)
+        except ValueError:
+            return None
+        else:
+            query = self.session.query(models.Title).filter(models.Title.id == get_int(title_id))
+            return query.one_or_none()
 
     def _get_name(self, name_id: str):
         query = self.session.query(models.Name).filter(models.Name.id == get_int(name_id))
@@ -161,3 +174,10 @@ class ImdbDal:
     def clean_up(self):
         for table in reversed(self.metadata.sorted_tables):
             self.engine.execute(table.delete())
+
+    def clean_table(self, model):
+        table = self.get_table(model.__table__.name)
+        table.delete()
+
+    def get_table(self, name):
+        return self.metadata.tables[name]

@@ -6,3 +6,4 @@ DATASET_PATHS = [('title', TITLES_DATASET),
                  ('name', NAMES_DATASET),
                  ('principals', PRINCIPALS_DATASET),
                  ('ratings', RATINGS_DATASET)]
+DEFAULT_BATCH_SIZE = 100_000

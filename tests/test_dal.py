@@ -4,6 +4,7 @@ from typing import List, Tuple
 
 import src.models as models
 from src.dal import ImdbDal
+from src.constants import DEFAULT_BATCH_SIZE
 
 DATASETS_DIR = 'datasets'
 TITLES_DATASET = 'title.basics.tsv'
@@ -23,12 +24,15 @@ class BaseTestDAL(unittest.TestCase):
          ratings_path
          ) = cls._get_dataset_paths()
         cls.dal = ImdbDal(
-            dataset_paths={
-                'title': titles_path,
-                'name': names_path,
-                'principals': principals_path,
-                'ratings': ratings_path
-            }
+            root='./datasets',
+            resume=None,
+            batch_size=DEFAULT_BATCH_SIZE,
+            dataset_paths=[
+                ('title', titles_path),
+                ('name', names_path),
+                ('principals', principals_path),
+                ('ratings', ratings_path)
+            ]
         )
         cls.dal.db_init('sqlite:///:memory:')
 
@@ -59,23 +63,23 @@ class TestDAL(BaseTestDAL):
         return titles_path, names_path, principals_path, ratings_path
 
     def test_names(self):
-        query = self.dal.session.query(models.Name).filter(models.Name.id == 'nm0000009').all()
+        query = self.dal.session.query(models.Name).filter(models.Name.id == 9).all()
         self.assertEqual(query[0].primaryProfession, 'actor,producer,soundtrack')
         self.assertEqual(
-            set([title.id for title in query[0].titles]), set('tt0000001,tt0000002,tt0000003,tt0000004'.split(','))
+            set([title.id for title in query[0].titles]), {1, 2, 3, 4}
         )
 
     def test_titles(self):
-        query: List[models.Title] = self.dal.session.query(models.Title).filter(models.Title.id == 'tt0000002').all()
+        query: List[models.Title] = self.dal.session.query(models.Title).filter(models.Title.id == 2).all()
         self.assertEqual(query[0].originalTitle, 'Le clown et ses chiens')
         self.assertEqual(
-            set(name.id for name in query[0].names), {'nm0000001', 'nm0000006', 'nm0000009'}
+            set(name.id for name in query[0].names), {1, 6, 9}
         )
 
     def test_principals(self):
         query: List[models.Principals] = self.dal.session.query(
             models.Principals
-        ).filter(models.Principals.title_id == 'tt0000001').all()
+        ).filter(models.Principals.title_id == 1).all()
         self.assertEqual(len(query), 4)
         for principal in query:
             self.assertIn(principal.category, principal.name.primaryProfession.split(','))
@@ -83,7 +87,7 @@ class TestDAL(BaseTestDAL):
     def test_ratings(self):
         query: List[models.Ratings] = self.dal.session.query(
             models.Ratings
-        ).filter(models.Ratings.title_id == 'tt0000001').all()
+        ).filter(models.Ratings.title_id == 1).all()
         self.assertEqual(len(query), 1)
         self.assertEqual(query[0].averageRating, 5.8)
         self.assertEqual(query[0].numVotes, 1396)
@@ -103,5 +107,8 @@ class TestDALWithInvalidDataSet(BaseTestDAL):
     def test_titles(self):
         query: List[models.Title] = self.dal.session.query(
             models.Title
-        ).filter(models.Title.id.in_(['tt0000005', 'tt0000009'])).all()
+        ).filter(models.Title.id.in_([5, 9])).all()
         self.assertEqual(len(query), 0)
+
+
+# TODO: Cover all the rest of cases with different args
