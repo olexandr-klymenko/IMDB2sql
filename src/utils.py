@@ -8,7 +8,7 @@ from collections import namedtuple
 from multiprocessing import Pool
 from os.path import join, exists
 import sys
-from typing import List, Dict
+from typing import List, Dict, Union
 
 import yaml
 from bs4 import BeautifulSoup
@@ -87,10 +87,13 @@ def overwrite_upper_line(content):
     print(content)
 
 
-def get_int(id_: str) -> int:
+def get_int(id_: str) -> Union[int, None]:
     """
     Convert string id like tt0000002 to integer 2
     :param id_: string id
     :return: integer id
     """
-    return int(id_[2:])
+    try:
+        return int(id_[2:])
+    except ValueError:
+        return None

@@ -33,8 +33,6 @@ def main(cmd_args):
         dal.db_init(db_uri=cmd_args.dburi)
         dal.parse_data_sets()
 
-# TODO: implement resumed table drop if exists
-
 
 if __name__ == '__main__':
     cmd_line_parser = ArgumentParser()
@@ -42,7 +40,7 @@ if __name__ == '__main__':
     cmd_line_parser.add_argument('--download', action="store_true")
     cmd_line_parser.add_argument('--extract', action="store_true")
     cmd_line_parser.add_argument('--parse', action="store_true")
-    cmd_line_parser.add_argument('--batch', default=DEFAULT_BATCH_SIZE)
+    cmd_line_parser.add_argument('--batch', default=DEFAULT_BATCH_SIZE, type=int)
     cmd_line_parser.add_argument('--dburi', default='sqlite:///:memory:',
                                  help="Database URI, i.e.: \n"
                                       "'postgresql://postgres@127.0.0.1:5432/postgres',\n"

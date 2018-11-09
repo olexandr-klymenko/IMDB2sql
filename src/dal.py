@@ -3,7 +3,7 @@ import os
 import sqlite3
 from collections import namedtuple
 from os.path import join, getsize, exists
-from typing import Iterable, Iterator, List
+from typing import Iterable, Iterator, List, Dict
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -30,6 +30,7 @@ class ImdbDal:
         self.echo = False
         self.db_uri = None
         self.session = None
+        self.name_title: List[Dict] = []
 
     def db_init(self, db_uri: str):
         if db_uri.endswith('.db') or db_uri.startswith(SQLITE_TYPE):
@@ -55,6 +56,8 @@ class ImdbDal:
             parse_handler = self._get_parse_handler(table_name)
             dataset = parse_handler(join(self.root, dataset_path))
             self._insert_dataset(dataset, status_line)
+
+        self.engine.execute(models.NameTitle.insert(), self.name_title)
         self.session.commit()
 
     def _get_parse_handler(self, table_name):
@@ -102,8 +105,8 @@ class ImdbDal:
                 category=getattr(data_set_class, 'category'),
                 job=self._get_null(getattr(data_set_class, 'job')),
                 characters=self._get_null(getattr(data_set_class, 'characters')),
-                title=self._get_title(getattr(data_set_class, 'tconst')),
-                name=self._get_name(getattr(data_set_class, 'nconst'))
+                name_id=get_int(getattr(data_set_class, 'nconst')),
+                title_id=get_int(getattr(data_set_class, 'tconst'))
             )
             yield principals_line, progress
 
@@ -113,7 +116,7 @@ class ImdbDal:
             ratings_line = models.Ratings(
                 averageRating=getattr(data_set_class, 'averageRating'),
                 numVotes=getattr(data_set_class, 'numVotes'),
-                title=self._get_title(getattr(data_set_class, 'tconst'))
+                title_id=get_int(getattr(data_set_class, 'tconst'))
             )
             yield ratings_line, progress
 
@@ -138,13 +141,17 @@ class ImdbDal:
     def _parse_name(self, dataset_path):
         self.clean_table(models.Name)
         for data_set_class, progress in self._parse_dataset(dataset_path):
+            name_id = get_int(getattr(data_set_class, 'nconst'))
+            titles = [get_int(el) for el in getattr(data_set_class, 'knownForTitles').split(',') if get_int(el)]
+            for title_id in titles:
+                self.name_title.append({'nameId': name_id, 'titleId': title_id})
+
             name_line = models.Name(
                 id=get_int(getattr(data_set_class, 'nconst')),
                 primaryName=getattr(data_set_class, 'primaryName'),
                 birthYear=getattr(data_set_class, 'birthYear'),
                 deathYear=self._get_null(getattr(data_set_class, 'deathYear')),
                 primaryProfession=getattr(data_set_class, 'primaryProfession'),
-                titles=self._get_titles(getattr(data_set_class, 'knownForTitles').split(','))  # TODO: optimize
             )
 
             yield name_line, progress
@@ -176,8 +183,5 @@ class ImdbDal:
             self.engine.execute(table.delete())
 
     def clean_table(self, model):
-        table = self.get_table(model.__table__.name)
-        table.delete()
-
-    def get_table(self, name):
-        return self.metadata.tables[name]
+        self.session.query(model).delete()
+        self.session.commit()
