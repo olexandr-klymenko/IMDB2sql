@@ -5,7 +5,7 @@ from os.path import join
 
 from memory_profiler import profile
 
-from src.constants import DATASET_PATHS, DEFAULT_BATCH_SIZE
+from src.constants import DATASET_PATHS, DEFAULT_FREE_MEM
 from src.dal import ImdbDal
 from src.utils import get_config, get_links, DataSetsHandler
 
@@ -28,7 +28,7 @@ def main(cmd_args):
     if cmd_args.parse:
         dal = ImdbDal(dataset_paths=DATASET_PATHS,
                       root=cmd_args.root,
-                      batch_size=cmd_args.batch,
+                      free_mem=cmd_args.freemem,
                       resume=cmd_args.resume)
         dal.db_init(db_uri=cmd_args.dburi)
         dal.parse_data_sets()
@@ -40,7 +40,7 @@ if __name__ == '__main__':
     cmd_line_parser.add_argument('--download', action="store_true")
     cmd_line_parser.add_argument('--extract', action="store_true")
     cmd_line_parser.add_argument('--parse', action="store_true")
-    cmd_line_parser.add_argument('--batch', default=DEFAULT_BATCH_SIZE, type=int)
+    cmd_line_parser.add_argument('--freemem', default=DEFAULT_FREE_MEM, type=int)
     cmd_line_parser.add_argument('--dburi', default='sqlite:///:memory:',
                                  help="Database URI, i.e.: \n"
                                       "'postgresql://postgres@127.0.0.1:5432/postgres',\n"

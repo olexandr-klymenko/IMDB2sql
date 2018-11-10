@@ -4,7 +4,7 @@ from typing import List, Tuple
 
 import src.models as models
 from src.dal import ImdbDal
-from src.constants import DEFAULT_BATCH_SIZE
+from src.constants import DEFAULT_FREE_MEM
 
 DATASETS_DIR = 'datasets'
 TITLES_DATASET = 'title.basics.tsv'
@@ -26,7 +26,7 @@ class BaseTestDAL(unittest.TestCase):
         cls.dal = ImdbDal(
             root='./datasets',
             resume=None,
-            batch_size=DEFAULT_BATCH_SIZE,
+            free_mem=DEFAULT_FREE_MEM,
             dataset_paths=[
                 ('title', titles_path),
                 ('name', names_path),

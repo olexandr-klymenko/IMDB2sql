@@ -3,6 +3,7 @@ import os
 import sqlite3
 from collections import namedtuple
 from os.path import join, getsize, exists
+import psutil
 from typing import Iterable, Iterator, List, Dict
 
 from sqlalchemy import create_engine
@@ -15,7 +16,7 @@ SQLITE_TYPE = 'sqlite:///'
 
 
 class ImdbDal:
-    def __init__(self, root, resume, batch_size: int, dataset_paths: List):
+    def __init__(self, root, resume, free_mem: int, dataset_paths: List):
         self.engine = None
         self.metadata = None
         self.resume = resume
@@ -26,7 +27,7 @@ class ImdbDal:
             self.dataset_paths = dataset_paths
 
         self.root = root
-        self.batch_size = batch_size
+        self.free_mem = free_mem
         self.echo = False
         self.db_uri = None
         self.session = None
@@ -57,7 +58,6 @@ class ImdbDal:
             dataset = parse_handler(join(self.root, dataset_path))
             self._insert_dataset(dataset, status_line)
 
-        self.engine.execute(models.NameTitle.insert(), self.name_title)
         self.session.commit()
 
     def _get_parse_handler(self, table_name):
@@ -66,20 +66,27 @@ class ImdbDal:
     def _insert_dataset(self, dataset_iter: Iterator, status_line: str):
         start_progress = 0
         print(f'{status_line}: 0%')
-        for idx, (line, progress) in enumerate(dataset_iter):
+        for line, progress in dataset_iter:
             self.session.add(line)
             if progress - start_progress > 0.01:
                 start_progress += 0.01
                 overwrite_upper_line(f'{status_line}: {progress:.2f}%')
 
-            if self._is_time_for_commit(idx):
+            if self._is_time_for_commit():
                 overwrite_upper_line(f'{status_line}: {progress :.2f}% committing ...')
-                self.session.commit()
-                overwrite_upper_line(f'{status_line}: {progress :.2f}%')
-        print(f'{status_line}: 100% Done')
 
-    def _is_time_for_commit(self, idx):
-        return self.batch_size > 0 and idx > 0 and idx % self.batch_size == 0
+                if self.name_title:
+                    self.engine.execute(models.NameTitle.insert(), self.name_title)
+                    self.name_title = []
+
+                self.session.commit()
+
+                overwrite_upper_line(f'{status_line}: {progress :.2f}%')
+        overwrite_upper_line(f'{status_line}: 100% Done')
+
+    def _is_time_for_commit(self):
+        vm = psutil.virtual_memory()
+        return self.free_mem > vm.free
 
     def _parse_title(self, dataset_path):
         self.clean_table(models.Title)
@@ -155,23 +162,6 @@ class ImdbDal:
             )
 
             yield name_line, progress
-
-    def _get_titles(self, title_ids: Iterable):
-        titles = [self._get_title(id_) for id_ in title_ids]
-        return [title for title in titles if title if title is not None]
-
-    def _get_title(self, title_id: str):
-        try:
-            _title_id = get_int(title_id)
-        except ValueError:
-            return None
-        else:
-            query = self.session.query(models.Title).filter(models.Title.id == get_int(title_id))
-            return query.one_or_none()
-
-    def _get_name(self, name_id: str):
-        query = self.session.query(models.Name).filter(models.Name.id == get_int(name_id))
-        return query.one_or_none()
 
     @staticmethod
     def _get_null(value):
