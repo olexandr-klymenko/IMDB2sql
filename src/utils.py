@@ -1,4 +1,5 @@
 import gzip
+import locale
 import os
 import re
 import tempfile
@@ -10,6 +11,7 @@ from os.path import join, exists
 import sys
 from typing import List, Dict, Union
 
+import psutil
 import yaml
 from bs4 import BeautifulSoup
 
@@ -97,3 +99,12 @@ def get_int(id_: str) -> Union[int, None]:
         return int(id_[2:])
     except ValueError:
         return None
+
+
+def get_footprint() -> int:
+    process = psutil.Process(os.getpid())
+    return process.memory_info().rss
+
+
+def get_pretty_int(value: int) -> str:
+    return locale.format("%d", value, grouping=True)

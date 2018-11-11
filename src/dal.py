@@ -3,20 +3,20 @@ import os
 import sqlite3
 from collections import namedtuple
 from os.path import join, getsize, exists
-import psutil
-from typing import Iterable, Iterator, List, Dict
+from typing import Iterator, List, Dict
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 import src.models as models
-from src.utils import overwrite_upper_line, get_int
+from src.utils import overwrite_upper_line, get_int, get_footprint, get_pretty_int
+from src.constants import SKIP_CYCLES_NUM
 
 SQLITE_TYPE = 'sqlite:///'
 
 
 class ImdbDal:
-    def __init__(self, root, resume, free_mem: int, dataset_paths: List):
+    def __init__(self, root, resume, max_footprint: int, dataset_paths: List):
         self.engine = None
         self.metadata = None
         self.resume = resume
@@ -27,7 +27,7 @@ class ImdbDal:
             self.dataset_paths = dataset_paths
 
         self.root = root
-        self.free_mem = free_mem
+        self.max_footprint = max_footprint
         self.echo = False
         self.db_uri = None
         self.session = None
@@ -66,27 +66,35 @@ class ImdbDal:
     def _insert_dataset(self, dataset_iter: Iterator, status_line: str):
         start_progress = 0
         print(f'{status_line}: 0%')
-        for line, progress in dataset_iter:
+        for idx, (line, progress) in enumerate(dataset_iter):
             self.session.add(line)
             if progress - start_progress > 0.01:
                 start_progress += 0.01
-                overwrite_upper_line(f'{status_line}: {progress:.2f}%')
 
-            if self._is_time_for_commit():
-                overwrite_upper_line(f'{status_line}: {progress :.2f}% committing ...')
+                if idx % SKIP_CYCLES_NUM == 0:
+                    overwrite_upper_line(self._get_status_line(status_line, progress))
 
-                if self.name_title:
-                    self.engine.execute(models.NameTitle.insert(), self.name_title)
-                    self.name_title = []
+                    if self._is_time_for_commit():
+                        overwrite_upper_line(
+                            f'{self._get_status_line(status_line, progress)} committing ...'
+                        )
 
-                self.session.commit()
+                        if self.name_title:
+                            self.engine.execute(models.NameTitle.insert(), self.name_title)
+                            self.name_title = []
 
-                overwrite_upper_line(f'{status_line}: {progress :.2f}%')
+                        self.session.commit()
+
+                        overwrite_upper_line(f'{status_line}: {progress :.2f}%')
+
         overwrite_upper_line(f'{status_line}: 100% Done')
 
+    @staticmethod
+    def _get_status_line(status_line, progress):
+        return f'{status_line}: {progress:.2f}%\tmemory footprint: {get_pretty_int(get_footprint())}'
+
     def _is_time_for_commit(self):
-        vm = psutil.virtual_memory()
-        return self.free_mem > vm.free
+        return self.max_footprint < get_footprint()
 
     def _parse_title(self, dataset_path):
         self.clean_table(models.Title)
