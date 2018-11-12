@@ -1,14 +1,13 @@
 import gzip
-import locale
 import os
 import re
+import sys
 import tempfile
 import urllib.parse
 import urllib.request
 from collections import namedtuple
 from multiprocessing import Pool
 from os.path import join, exists
-import sys
 from typing import List, Dict, Union
 
 import psutil
@@ -107,4 +106,4 @@ def get_footprint() -> int:
 
 
 def get_pretty_int(value: int) -> str:
-    return locale.format("%d", value, grouping=True)
+    return "{:,}".format(value)

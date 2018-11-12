@@ -1,6 +1,5 @@
-from argparse import ArgumentParser
-import locale
 import urllib.request
+from argparse import ArgumentParser
 from os import getcwd
 from os.path import join
 
@@ -22,7 +21,7 @@ def main(cmd_args):
         handler = DataSetsHandler(get_links(imdb_page_content, config), root=cmd_args.root)
 
         if cmd_args.download:
-                handler.download()
+            handler.download()
         if cmd_args.extract:
             handler.extract()
 
@@ -36,7 +35,6 @@ def main(cmd_args):
 
 
 if __name__ == '__main__':
-    locale.setlocale(locale.LC_ALL, 'en_US')
     cmd_line_parser = ArgumentParser()
     cmd_line_parser.add_argument('--root', help='Directory where data sets will be downloaded', required=True)
     cmd_line_parser.add_argument('--download', action="store_true")
