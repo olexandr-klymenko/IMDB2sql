@@ -15,7 +15,7 @@ from src.constants import SKIP_CYCLES_NUM
 SQLITE_TYPE = 'sqlite:///'
 
 
-class ImdbDal:
+class DatasetParser:
     def __init__(self, root, resume, max_footprint: int, dataset_paths: List):
         self.engine = None
         self.metadata = None
@@ -30,7 +30,6 @@ class ImdbDal:
         self.max_footprint = max_footprint
         self.echo = False
         self.db_uri = None
-        self.session = None
         self.name_title: List[Dict] = []
 
     def db_init(self, db_uri: str):
@@ -46,28 +45,23 @@ class ImdbDal:
         self.metadata = models.Base.metadata
         self.metadata.create_all(bind=self.engine)
         self.metadata.reflect(bind=self.engine)
-        session = sessionmaker(bind=self.engine)
-        self.session = session()
 
     def parse_data_sets(self):
-        if self.session is None:
-            raise Exception('Database session is not initialized')
         for table_name, dataset_path in self.dataset_paths:
             status_line = f"Parsing {dataset_path} into '{table_name}' table ..."
             parse_handler = self._get_parse_handler(table_name)
             dataset = parse_handler(join(self.root, dataset_path))
             self._insert_dataset(dataset, status_line)
 
-        self.session.commit()
-
     def _get_parse_handler(self, table_name):
         return getattr(self, f'_parse_{table_name}')
 
     def _insert_dataset(self, dataset_iter: Iterator, status_line: str):
         start_progress = 0
+        buffer = []
         print(f'{status_line}: 0%')
         for idx, (line, progress) in enumerate(dataset_iter):
-            self.session.add(line)
+            buffer.append(line)
             if progress - start_progress > 0.01:
                 start_progress += 0.01
 
@@ -79,14 +73,18 @@ class ImdbDal:
                             f'{self._get_status_line(status_line, progress)} committing ...'
                         )
 
+                        self._commit_all(buffer)
+                        buffer = []
+
                         if self.name_title:
                             self.engine.execute(models.NameTitle.insert(), self.name_title)
+                            session = self._get_session()
+                            session.commit()
                             self.name_title = []
-
-                        self.session.commit()
 
                         overwrite_upper_line(f'{status_line}: {progress :.2f}%')
 
+        self._commit_all(buffer)
         overwrite_upper_line(f'{status_line}: 100% Done')
 
     @staticmethod
@@ -95,6 +93,14 @@ class ImdbDal:
 
     def _is_time_for_commit(self):
         return self.max_footprint < get_footprint()
+
+    def _commit_all(self, buffer):
+        session = self._get_session()
+        session.add_all(buffer)
+        session.commit()
+
+    def _get_session(self):
+        return sessionmaker(bind=self.engine)()
 
     def _parse_title(self, dataset_path):
         self.clean_table(models.Title)
@@ -181,5 +187,6 @@ class ImdbDal:
             self.engine.execute(table.delete())
 
     def clean_table(self, model):
-        self.session.query(model).delete()
-        self.session.commit()
+        session = self._get_session()
+        session.query(model).delete()
+        session.commit()

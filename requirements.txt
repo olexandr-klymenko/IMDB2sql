@@ -2,6 +2,6 @@ PyYAML
 beautifulsoup4
 mysql-connector-python
 psutil
-psycopg2
+psycopg2-binary
 validators
 SQLAlchemy

@@ -18,8 +18,8 @@ class Title(Base):
 
     id = Column(Integer, primary_key=True)
     titleType = Column(String(30))
-    primaryTitle = Column(String(400))
-    originalTitle = Column(String(400))
+    primaryTitle = Column(String(500))
+    originalTitle = Column(String(500))
     isAdult = Column(Boolean)
     startYear = Column(Integer)
     endYear = Column(Integer, nullable=True)
@@ -33,10 +33,10 @@ class Name(Base):
     __tablename__ = 'name'
 
     id = Column(Integer, primary_key=True)
-    primaryName = Column(String(30))
+    primaryName = Column(String(50))
     birthYear = Column(Integer)
     deathYear = Column(Integer, nullable=True)
-    primaryProfession = Column(String(30))
+    primaryProfession = Column(String(50))
 
     titles = relationship("Title", secondary=NameTitle, backref='name')
 

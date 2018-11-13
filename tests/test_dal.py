@@ -3,7 +3,7 @@ from os.path import join, dirname
 from typing import List, Tuple
 
 import src.models as models
-from src.dal import ImdbDal
+from src.dataset_parser import DatasetParser
 from src.constants import DEFAULT_FREE_MEM
 
 DATASETS_DIR = 'datasets'
@@ -23,7 +23,7 @@ class BaseTestDAL(unittest.TestCase):
          principals_path,
          ratings_path
          ) = cls._get_dataset_paths()
-        cls.dal = ImdbDal(
+        cls.dal = DatasetParser(
             root='./datasets',
             resume=None,
             free_mem=DEFAULT_FREE_MEM,

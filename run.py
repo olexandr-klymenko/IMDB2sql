@@ -6,7 +6,7 @@ from os.path import join
 from memory_profiler import profile
 
 from src.constants import DATASET_PATHS, DEFAULT_MAX_MEMORY_FOOTPRINT
-from src.dal import ImdbDal
+from src.dataset_parser import DatasetParser
 from src.utils import get_config, get_links, DataSetsHandler
 
 
@@ -26,10 +26,10 @@ def main(cmd_args):
             handler.extract()
 
     if cmd_args.parse:
-        dal = ImdbDal(dataset_paths=DATASET_PATHS,
-                      root=cmd_args.root,
-                      max_footprint=cmd_args.maxfootprint,
-                      resume=cmd_args.resume)
+        dal = DatasetParser(dataset_paths=DATASET_PATHS,
+                            root=cmd_args.root,
+                            max_footprint=cmd_args.maxfootprint,
+                            resume=cmd_args.resume)
         dal.db_init(db_uri=cmd_args.dburi)
         dal.parse_data_sets()
 
@@ -41,11 +41,11 @@ if __name__ == '__main__':
     cmd_line_parser.add_argument('--extract', action="store_true")
     cmd_line_parser.add_argument('--parse', action="store_true")
     cmd_line_parser.add_argument('--maxfootprint', default=DEFAULT_MAX_MEMORY_FOOTPRINT, type=int)
-    cmd_line_parser.add_argument('--dburi', default='sqlite:///:memory:',
-                                 help="Database URI, i.e.: \n"
-                                      "'postgresql://postgres@127.0.0.1:5432/postgres',\n"
-                                      "'mysql+mysqlconnector://root:mysql@127.0.0.1:3306/mysql',\n"
-                                      "'sqlite:///imdb.db'")
+    cmd_line_parser.add_argument('--dburi', choices=[
+        "postgresql://postgres@127.0.0.1:5432/postgres",
+        "mysql+mysqlconnector://root:mysql@127.0.0.1:3306/mysql",
+        "sqlite:///imdb.db"
+    ], default='sqlite:///:memory:', help='Database URI')
     cmd_line_parser.add_argument('--resume', choices=['name', 'principals', 'ratings'], default=None,
                                  help='Start parsing not from first table')
     args = cmd_line_parser.parse_args()
