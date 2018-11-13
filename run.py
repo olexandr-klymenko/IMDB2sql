@@ -3,14 +3,11 @@ from argparse import ArgumentParser
 from os import getcwd
 from os.path import join
 
-from memory_profiler import profile
-
 from src.constants import DATASET_PATHS, DEFAULT_MAX_MEMORY_FOOTPRINT
 from src.dataset_parser import DatasetParser
 from src.utils import get_config, get_links, DataSetsHandler
 
 
-@profile
 def main(cmd_args):
     if cmd_args.download or cmd_args.extract:
         config = get_config(join(getcwd(), 'config', 'datasets.yml'))

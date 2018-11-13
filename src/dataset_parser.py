@@ -5,6 +5,7 @@ from collections import namedtuple
 from os.path import join, getsize, exists
 from typing import Iterator, List, Dict
 
+from memory_profiler import profile
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -56,6 +57,7 @@ class DatasetParser:
     def _get_parse_handler(self, table_name):
         return getattr(self, f'_parse_{table_name}')
 
+    @profile
     def _insert_dataset(self, dataset_iter: Iterator, status_line: str):
         start_progress = 0
         buffer = []
@@ -150,14 +152,15 @@ class DatasetParser:
             data_set_class = namedtuple('_', next(tsv_reader))
             for line in tsv_reader:
                 read_size += len(''.join(line)) + len(line)
+
+                data = None
                 try:
-                    yield data_set_class(*line), (read_size / size) * 100
+                    data = data_set_class(*line)
                 except TypeError:
-                    print(f'Invalid line: {line}')
-                    continue
-                except Exception:
-                    print(f'Invalid line: {line}')
-                    raise
+                    line = line + [None] * (len(data_set_class._fields) - len(line))
+                    data = data_set_class(*line)
+                finally:
+                    yield data, (read_size / size) * 100
 
     def _parse_name(self, dataset_path):
         self.clean_table(models.Name)
@@ -170,7 +173,7 @@ class DatasetParser:
             name_line = models.Name(
                 id=get_int(getattr(data_set_class, 'nconst')),
                 primaryName=getattr(data_set_class, 'primaryName'),
-                birthYear=getattr(data_set_class, 'birthYear'),
+                birthYear=self._get_null(getattr(data_set_class, 'birthYear')),
                 deathYear=self._get_null(getattr(data_set_class, 'deathYear')),
                 primaryProfession=getattr(data_set_class, 'primaryProfession'),
             )
