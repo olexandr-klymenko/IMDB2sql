@@ -26,25 +26,29 @@ def main(cmd_args):
         dal = DatasetParser(dataset_paths=DATASET_PATHS,
                             root=cmd_args.root,
                             max_footprint=cmd_args.maxfootprint,
-                            resume=cmd_args.resume)
+                            resume=cmd_args.resume,
+                            one=cmd_args.one)
         dal.db_init(db_uri=cmd_args.dburi)
         dal.parse_data_sets()
 
 
 if __name__ == '__main__':
     cmd_line_parser = ArgumentParser()
-    cmd_line_parser.add_argument('--root', help='Directory where data sets will be downloaded', required=True)
-    cmd_line_parser.add_argument('--download', action="store_true")
-    cmd_line_parser.add_argument('--extract', action="store_true")
-    cmd_line_parser.add_argument('--parse', action="store_true")
-    cmd_line_parser.add_argument('--maxfootprint', default=DEFAULT_MAX_MEMORY_FOOTPRINT, type=int)
-    cmd_line_parser.add_argument('--dburi', choices=[
+    cmd_line_parser.add_argument('--root', '-r', help='Directory where data sets will be downloaded', required=True)
+    cmd_line_parser.add_argument('--download', '-d', action="store_true")
+    cmd_line_parser.add_argument('--extract', '-x', action="store_true")
+    cmd_line_parser.add_argument('--parse', '-p', action="store_true")
+    cmd_line_parser.add_argument('--maxfootprint', '-mf', default=DEFAULT_MAX_MEMORY_FOOTPRINT, type=int)
+    cmd_line_parser.add_argument('--dburi', '-db', choices=[
         "postgresql://postgres@127.0.0.1:5432/postgres",
         "mysql+mysqlconnector://root:mysql@127.0.0.1:3306/mysql",
         "sqlite:///imdb.db"
     ], default='sqlite:///:memory:', help='Database URI')
     cmd_line_parser.add_argument('--resume', choices=['name', 'principals', 'ratings'], default=None,
                                  help='Start parsing not from first table')
+    cmd_line_parser.add_argument('--one', help="Parse only one table", action="store_true")
     args = cmd_line_parser.parse_args()
     print(args)
     main(args)
+
+# TODO:  implement click for better cli experience

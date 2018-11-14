@@ -1,7 +1,7 @@
 import csv
 import os
 import sqlite3
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 from os.path import join, getsize, exists
 from typing import Iterator, List, Dict
 
@@ -17,7 +17,7 @@ SQLITE_TYPE = 'sqlite:///'
 
 
 class DatasetParser:
-    def __init__(self, root, resume, max_footprint: int, dataset_paths: List):
+    def __init__(self, root, resume, max_footprint: int, dataset_paths: List, one: bool):
         self.engine = None
         self.metadata = None
         self.resume = resume
@@ -27,11 +27,15 @@ class DatasetParser:
         else:
             self.dataset_paths = dataset_paths
 
+        if one:
+            self.dataset_paths = [self.dataset_paths[0]]
+
         self.root = root
         self.max_footprint = max_footprint
         self.echo = False
         self.db_uri = None
         self.name_title: List[Dict] = []
+        self.invalid_ids = defaultdict(set)
 
     def db_init(self, db_uri: str):
         if db_uri.endswith('.db') or db_uri.startswith(SQLITE_TYPE):
@@ -54,6 +58,8 @@ class DatasetParser:
             dataset = parse_handler(join(self.root, dataset_path))
             self._insert_dataset(dataset, status_line)
 
+        print(f"Invalid dataset ids:{self.invalid_ids}")
+
     def _get_parse_handler(self, table_name):
         return getattr(self, f'_parse_{table_name}')
 
@@ -61,7 +67,6 @@ class DatasetParser:
     def _insert_dataset(self, dataset_iter: Iterator, status_line: str):
         start_progress = 0
         buffer = []
-        print(f'{status_line}: 0%')
         for idx, (line, progress) in enumerate(dataset_iter):
             buffer.append(line)
             if progress - start_progress > 0.01:
@@ -86,6 +91,9 @@ class DatasetParser:
 
                         overwrite_upper_line(f'{status_line}: {progress :.2f}%')
 
+        overwrite_upper_line(
+            f'{self._get_status_line(status_line, progress)} committing ...'
+        )
         self._commit_all(buffer)
         overwrite_upper_line(f'{status_line}: 100% Done')
 
@@ -106,7 +114,7 @@ class DatasetParser:
 
     def _parse_title(self, dataset_path):
         self.clean_table(models.Title)
-        for data_set_class, progress in self._parse_dataset(dataset_path):
+        for data_set_class, progress in self._parse_dataset(dataset_path, 'title'):
             title_line = models.Title(
                 id=get_int(getattr(data_set_class, 'tconst')),
                 titleType=getattr(data_set_class, 'titleType'),
@@ -120,55 +128,14 @@ class DatasetParser:
             )
             yield title_line, progress
 
-    def _parse_principals(self, dataset_path):
-        self.clean_table(models.Principals)
-        for data_set_class, progress in self._parse_dataset(dataset_path):
-            principals_line = models.Principals(
-                ordering=getattr(data_set_class, 'ordering'),
-                category=getattr(data_set_class, 'category'),
-                job=self._get_null(getattr(data_set_class, 'job')),
-                characters=self._get_null(getattr(data_set_class, 'characters')),
-                name_id=get_int(getattr(data_set_class, 'nconst')),
-                title_id=get_int(getattr(data_set_class, 'tconst'))
-            )
-            yield principals_line, progress
-
-    def _parse_ratings(self, dataset_path):
-        self.clean_table(models.Ratings)
-        for data_set_class, progress in self._parse_dataset(dataset_path):
-            ratings_line = models.Ratings(
-                averageRating=getattr(data_set_class, 'averageRating'),
-                numVotes=getattr(data_set_class, 'numVotes'),
-                title_id=get_int(getattr(data_set_class, 'tconst'))
-            )
-            yield ratings_line, progress
-
-    @staticmethod
-    def _parse_dataset(file_path):
-        size = getsize(file_path)
-        read_size = 0
-        with open(file_path) as fd:
-            tsv_reader = csv.reader(fd, delimiter='\t')
-            data_set_class = namedtuple('_', next(tsv_reader))
-            for line in tsv_reader:
-                read_size += len(''.join(line)) + len(line)
-
-                data = None
-                try:
-                    data = data_set_class(*line)
-                except TypeError:
-                    line = line + [None] * (len(data_set_class._fields) - len(line))
-                    data = data_set_class(*line)
-                finally:
-                    yield data, (read_size / size) * 100
-
     def _parse_name(self, dataset_path):
         self.clean_table(models.Name)
-        for data_set_class, progress in self._parse_dataset(dataset_path):
+        for data_set_class, progress in self._parse_dataset(dataset_path, 'name'):
             name_id = get_int(getattr(data_set_class, 'nconst'))
             titles = [get_int(el) for el in getattr(data_set_class, 'knownForTitles').split(',') if get_int(el)]
             for title_id in titles:
-                self.name_title.append({'nameId': name_id, 'titleId': title_id})
+                if title_id not in self.invalid_ids['title']:
+                    self.name_title.append({'nameId': name_id, 'titleId': title_id})
 
             name_line = models.Name(
                 id=get_int(getattr(data_set_class, 'nconst')),
@@ -180,6 +147,48 @@ class DatasetParser:
 
             yield name_line, progress
 
+    def _parse_principals(self, dataset_path):
+        self.clean_table(models.Principals)
+        for data_set_class, progress in self._parse_dataset(dataset_path, 'principals'):
+            title_id = get_int(getattr(data_set_class, 'tconst'))
+            if title_id not in self.invalid_ids['title']:
+                principals_line = models.Principals(
+                    ordering=getattr(data_set_class, 'ordering'),
+                    category=getattr(data_set_class, 'category'),
+                    job=self._get_null(getattr(data_set_class, 'job')),
+                    characters=self._get_null(getattr(data_set_class, 'characters')),
+                    name_id=get_int(getattr(data_set_class, 'nconst')),
+                    title_id=get_int(getattr(data_set_class, 'tconst'))
+                )
+                yield principals_line, progress
+
+    def _parse_ratings(self, dataset_path):
+        self.clean_table(models.Ratings)
+        for data_set_class, progress in self._parse_dataset(dataset_path, 'ratings'):
+            title_id = get_int(getattr(data_set_class, 'tconst'))
+            if title_id not in self.invalid_ids['title']:
+                ratings_line = models.Ratings(
+                    averageRating=getattr(data_set_class, 'averageRating'),
+                    numVotes=getattr(data_set_class, 'numVotes'),
+                    title_id=get_int(getattr(data_set_class, 'tconst'))
+                )
+                yield ratings_line, progress
+
+    def _parse_dataset(self, file_path, table_name):
+        size = getsize(file_path)
+        read_size = 0
+        with open(file_path) as fd:
+            tsv_reader = csv.reader(fd, delimiter='\t')
+            data_set_class = namedtuple('_', next(tsv_reader))
+            for line in tsv_reader:
+                read_size += len(''.join(line)) + len(line)
+
+                try:
+                    data = data_set_class(*line)
+                    yield data, (read_size / size) * 100
+                except TypeError:
+                    self.invalid_ids[table_name].add(line[0])
+
     @staticmethod
     def _get_null(value):
         if value != '\\N':
@@ -190,6 +199,7 @@ class DatasetParser:
             self.engine.execute(table.delete())
 
     def clean_table(self, model):
+        print(f"Cleaning up table {model.__tablename__} ...")
         session = self._get_session()
         session.query(model).delete()
         session.commit()
