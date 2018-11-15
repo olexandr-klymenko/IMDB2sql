@@ -5,7 +5,6 @@ from collections import namedtuple, defaultdict
 from os.path import join, getsize, exists
 from typing import Iterator, List, Dict
 
-from memory_profiler import profile
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -63,7 +62,6 @@ class DatasetParser:
     def _get_parse_handler(self, table_name):
         return getattr(self, f'_parse_{table_name}')
 
-    @profile
     def _insert_dataset(self, dataset_iter: Iterator, status_line: str):
         start_progress = 0
         buffer = []
@@ -187,7 +185,7 @@ class DatasetParser:
                     data = data_set_class(*line)
                     yield data, (read_size / size) * 100
                 except TypeError:
-                    self.invalid_ids[table_name].add(line[0])
+                    self.invalid_ids[table_name].add(get_int(line[0]))
 
     @staticmethod
     def _get_null(value):
@@ -203,3 +201,6 @@ class DatasetParser:
         session = self._get_session()
         session.query(model).delete()
         session.commit()
+
+
+#  TODO: fix many to many relationship
