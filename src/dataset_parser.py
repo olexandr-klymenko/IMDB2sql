@@ -1,16 +1,16 @@
+from collections import namedtuple, defaultdict
+
 import csv
 import os
 import sqlite3
-from collections import namedtuple, defaultdict
 from os.path import join, getsize, exists
-from typing import Iterator, List, Dict
-
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from typing import Iterator, List, Dict
 
 import src.models as models
-from src.utils import overwrite_upper_line, get_int, get_footprint, get_pretty_int
 from src.constants import SKIP_CYCLES_NUM
+from src.utils import overwrite_upper_line, get_int, get_footprint, get_pretty_int
 
 SQLITE_TYPE = 'sqlite:///'
 
@@ -33,6 +33,7 @@ class DatasetParser:
         self.max_footprint = max_footprint
         self.echo = False
         self.db_uri = None
+        self.buffer = []
         self.name_title: List[Dict] = []
         self.invalid_ids = defaultdict(set)
 
@@ -64,9 +65,8 @@ class DatasetParser:
 
     def _insert_dataset(self, dataset_iter: Iterator, status_line: str):
         start_progress = 0
-        buffer = []
         for idx, (line, progress) in enumerate(dataset_iter):
-            buffer.append(line)
+            self.buffer.append(line)
             if progress - start_progress > 0.01:
                 start_progress += 0.01
 
@@ -74,38 +74,38 @@ class DatasetParser:
                     overwrite_upper_line(self._get_status_line(status_line, progress))
 
                     if self._is_time_for_commit():
-                        overwrite_upper_line(
-                            f'{self._get_status_line(status_line, progress)} committing ...'
-                        )
-
-                        self._commit_all(buffer)
-                        buffer = []
-
-                        if self.name_title:
-                            self.engine.execute(models.NameTitle.insert(), self.name_title)
-                            session = self._get_session()
-                            session.commit()
-                            self.name_title = []
+                        self._commit_batch(status_line, progress)
 
                         overwrite_upper_line(f'{status_line}: {progress :.2f}%')
 
-        overwrite_upper_line(
-            f'{self._get_status_line(status_line, progress)} committing ...'
-        )
-        self._commit_all(buffer)
+        self._commit_batch(status_line, 100)
         overwrite_upper_line(f'{status_line}: 100% Done')
 
     @staticmethod
     def _get_status_line(status_line, progress):
         return f'{status_line}: {progress:.2f}%\tmemory footprint: {get_pretty_int(get_footprint())}'
 
+    def _commit_batch(self, status_line, progress):
+        overwrite_upper_line(
+            f'{self._get_status_line(status_line, progress)} committing ...'
+        )
+
+        self._commit_buffer()
+
+        if self.name_title:
+            self.engine.execute(models.NameTitle.insert(), self.name_title)
+            session = self._get_session()
+            session.commit()
+            self.name_title = []
+
     def _is_time_for_commit(self):
         return self.max_footprint < get_footprint()
 
-    def _commit_all(self, buffer):
+    def _commit_buffer(self):
         session = self._get_session()
-        session.add_all(buffer)
+        session.add_all(self.buffer)
         session.commit()
+        self.buffer = []
 
     def _get_session(self):
         return sessionmaker(bind=self.engine)()
@@ -201,6 +201,3 @@ class DatasetParser:
         session = self._get_session()
         session.query(model).delete()
         session.commit()
-
-
-#  TODO: fix many to many relationship

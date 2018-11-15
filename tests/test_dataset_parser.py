@@ -1,12 +1,10 @@
 import unittest
-from os.path import join, dirname
-from typing import List, Tuple
+from sqlalchemy.orm import sessionmaker
+from typing import List
 
 import src.models as models
-from src.dataset_parser import DatasetParser
 from src.constants import DEFAULT_MAX_MEMORY_FOOTPRINT, DATASET_PATHS
-
-from sqlalchemy.orm import sessionmaker
+from src.dataset_parser import DatasetParser
 
 DATASETS_DIR = 'datasets'
 TITLES_DATASET = 'title.basics.tsv'
@@ -15,8 +13,7 @@ PRINCIPALS_DATASET = 'title.principals.tsv'
 RATINGS_DATASET = 'title.ratings.tsv'
 
 
-class BaseTestDAL(unittest.TestCase):
-
+class TestDataSetParser(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.dataset_parser = DatasetParser(
@@ -34,9 +31,6 @@ class BaseTestDAL(unittest.TestCase):
 
     def tearDown(self):
         self.dataset_parser.clean_up()
-
-
-class TestDAL(BaseTestDAL):
 
     def test_names(self):
         name_model: models.Name = self.session.query(models.Name).filter(models.Name.id == 9).all()[0]
@@ -70,3 +64,4 @@ class TestDAL(BaseTestDAL):
         self.assertEqual(query[0].title.id, 1)
 
 # TODO: Cover all the rest of cases with different args
+# TODO: Increase datasets size in several times
