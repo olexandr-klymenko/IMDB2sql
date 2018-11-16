@@ -36,6 +36,7 @@ class DatasetParser:
         self.buffer = []
         self.name_title: List[Dict] = []
         self.invalid_ids = defaultdict(set)
+        self.title_ids = set()
 
     def db_init(self, db_uri: str):
         if db_uri.endswith('.db') or db_uri.startswith(SQLITE_TYPE):
@@ -113,8 +114,10 @@ class DatasetParser:
     def _parse_title(self, dataset_path):
         self.clean_table(models.Title)
         for data_set_class, progress in self._parse_dataset(dataset_path, 'title'):
+            title_id = get_int(getattr(data_set_class, 'tconst'))
+            self.title_ids.add(title_id)
             title_line = models.Title(
-                id=get_int(getattr(data_set_class, 'tconst')),
+                id=title_id,
                 titleType=getattr(data_set_class, 'titleType'),
                 primaryTitle=getattr(data_set_class, 'primaryTitle'),
                 originalTitle=getattr(data_set_class, 'originalTitle'),
@@ -132,7 +135,7 @@ class DatasetParser:
             name_id = get_int(getattr(data_set_class, 'nconst'))
             titles = [get_int(el) for el in getattr(data_set_class, 'knownForTitles').split(',') if get_int(el)]
             for title_id in titles:
-                if title_id not in self.invalid_ids['title']:
+                if title_id in self.title_ids:
                     self.name_title.append({'nameId': name_id, 'titleId': title_id})
 
             name_line = models.Name(
@@ -149,7 +152,7 @@ class DatasetParser:
         self.clean_table(models.Principals)
         for data_set_class, progress in self._parse_dataset(dataset_path, 'principals'):
             title_id = get_int(getattr(data_set_class, 'tconst'))
-            if title_id not in self.invalid_ids['title']:
+            if title_id in self.title_ids:
                 principals_line = models.Principals(
                     ordering=getattr(data_set_class, 'ordering'),
                     category=getattr(data_set_class, 'category'),
@@ -164,7 +167,7 @@ class DatasetParser:
         self.clean_table(models.Ratings)
         for data_set_class, progress in self._parse_dataset(dataset_path, 'ratings'):
             title_id = get_int(getattr(data_set_class, 'tconst'))
-            if title_id not in self.invalid_ids['title']:
+            if title_id in self.title_ids:
                 ratings_line = models.Ratings(
                     averageRating=getattr(data_set_class, 'averageRating'),
                     numVotes=getattr(data_set_class, 'numVotes'),

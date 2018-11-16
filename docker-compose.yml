@@ -7,15 +7,15 @@ postgres:
   ports:
     - 5432:5432
 
-#mysql:
-#  container_name: mysql
-#  restart: always
-#  image: mysql:latest
-#  environment:
-#    MYSQL_ROOT_PASSWORD: 'mysql'
-#    MYSQL_USER: 'mysql'
-#    MYSQL_PASS: 'mysql'
-#  volumes:
-#  - ./mysql_data:/var/lib/mysql
-#  ports:
-#  - "3306:3306"
+mysql:
+  container_name: mysql
+  restart: always
+  image: mysql:latest
+  environment:
+    MYSQL_ROOT_PASSWORD: 'mysql'
+    MYSQL_USER: 'mysql'
+    MYSQL_PASS: 'mysql'
+  volumes:
+  - ./mysql_data:/var/lib/mysql
+  ports:
+  - "3306:3306"

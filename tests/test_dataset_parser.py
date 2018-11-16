@@ -6,18 +6,14 @@ import src.models as models
 from src.constants import DEFAULT_MAX_MEMORY_FOOTPRINT, DATASET_PATHS
 from src.dataset_parser import DatasetParser
 
-DATASETS_DIR = 'datasets'
-TITLES_DATASET = 'title.basics.tsv'
-NAMES_DATASET = 'name.basics.tsv'
-PRINCIPALS_DATASET = 'title.principals.tsv'
-RATINGS_DATASET = 'title.ratings.tsv'
+DATASETS_DIR = './datasets'
 
 
 class TestDataSetParser(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.dataset_parser = DatasetParser(
-            root='./datasets',
+            root=DATASETS_DIR,
             resume=None,
             max_footprint=DEFAULT_MAX_MEMORY_FOOTPRINT,
             dataset_paths=DATASET_PATHS,
@@ -38,6 +34,7 @@ class TestDataSetParser(unittest.TestCase):
         self.assertEqual(
             set([title.id for title in name_model.titles]), {1, 2, 3, 4}
         )
+        self.assertNotIn(9, self.dataset_parser.title_ids)
 
     def test_titles(self):
         title_model: models.Title = self.session.query(models.Title).filter(models.Title.id == 2).all()[0]
