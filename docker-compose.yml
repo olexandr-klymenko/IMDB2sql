@@ -15,6 +15,7 @@ mysql:
     MYSQL_ROOT_PASSWORD: 'mysql'
     MYSQL_USER: 'mysql'
     MYSQL_PASS: 'mysql'
+  command: mysqld --max_allowed_packet=4000M
   volumes:
   - ./mysql_data:/var/lib/mysql
   ports:
