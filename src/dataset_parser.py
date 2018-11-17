@@ -1,8 +1,9 @@
+import gc
+import sys
 from collections import namedtuple, defaultdict
 
 import csv
 import os
-import sys
 import sqlite3
 from os.path import join, getsize, exists
 from sqlalchemy import create_engine
@@ -92,11 +93,11 @@ class DatasetParser:
                     overwrite_upper_line(self._get_status_line(status_line, progress))
 
                     if self._is_time_for_commit():
-                        self._commit_batch(status_line, progress)
+                        self._commit_batch_and_free_memory(status_line, progress)
 
                         overwrite_upper_line(f'{status_line}: {progress :.2f}%')
 
-        self._commit_batch(status_line, 100)
+        self._commit_batch_and_free_memory(status_line, 100)
         overwrite_upper_line(f'{status_line}: 100% Done')
 
     @staticmethod
@@ -106,24 +107,26 @@ class DatasetParser:
     def _is_time_for_commit(self):
         return self.max_footprint < get_footprint()
 
-    def _commit_batch(self, status_line, progress):
+    def _commit_batch_and_free_memory(self, status_line, progress):
         overwrite_upper_line(
             f'{self._get_status_line(status_line, progress)} committing ...'
         )
-
         self._commit_buffer()
-
-        if self.name_title:
-            self.engine.execute(models.NameTitle.insert(), self.name_title)
-            session = self._get_session()
-            session.commit()
-            self.name_title = []
+        self._commit_name_title_table()
+        gc.collect()
 
     def _commit_buffer(self):
         session = self._get_session()
         session.add_all(self.buffer)
         session.commit()
         self.buffer = []
+
+    def _commit_name_title_table(self):
+        if self.name_title:
+            self.engine.execute(models.NameTitle.insert(), self.name_title)
+            session = self._get_session()
+            session.commit()
+            self.name_title = []
 
     def _get_session(self):
         return sessionmaker(bind=self.engine)()
@@ -223,6 +226,5 @@ class DatasetParser:
         session = self._get_session()
         session.query(model).delete()
         session.commit()
-
 
 # TODO: Implement data set fields validation
