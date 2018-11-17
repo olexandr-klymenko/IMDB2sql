@@ -46,9 +46,9 @@ class Principals(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     ordering = Column(Integer)
-    category = Column(String(30))
-    job = Column(String(30))
-    characters = Column(String(30))
+    category = Column(String(20))
+    job = Column(String(300))
+    characters = Column(String(500))
 
     title_id = Column(Integer, ForeignKey('title.id'))
     title = relationship("Title", uselist=False)
