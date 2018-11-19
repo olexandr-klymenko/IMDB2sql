@@ -3,7 +3,7 @@ from argparse import ArgumentParser
 from os import getcwd
 from os.path import join
 
-from src.constants import DATASET_PATHS, DEFAULT_MAX_MEMORY_FOOTPRINT
+from src.constants import DATASET_PATHS
 from src.dataset_parser import DatasetParser
 from src.utils import get_config, get_links, DataSetsHandler
 
@@ -25,7 +25,6 @@ def main(cmd_args):
     if cmd_args.parse:
         dal = DatasetParser(dataset_paths=DATASET_PATHS,
                             root=cmd_args.root,
-                            max_footprint=cmd_args.maxfootprint,
                             resume=cmd_args.resume,
                             one=cmd_args.one,
                             dry_run=cmd_args.dry)
@@ -39,7 +38,6 @@ if __name__ == '__main__':
     cmd_line_parser.add_argument('--download', '-d', action="store_true")
     cmd_line_parser.add_argument('--extract', '-x', action="store_true")
     cmd_line_parser.add_argument('--parse', '-p', action="store_true")
-    cmd_line_parser.add_argument('--maxfootprint', '-mf', default=DEFAULT_MAX_MEMORY_FOOTPRINT, type=int)
     cmd_line_parser.add_argument('--dburi', '-db', choices=[
         "postgresql://postgres@127.0.0.1:5433/postgres", "sqlite:///imdb.db"
     ], default='sqlite:///:memory:', help='Database URI')

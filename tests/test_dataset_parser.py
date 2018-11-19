@@ -1,9 +1,10 @@
 import unittest
-from sqlalchemy.orm import sessionmaker
 from typing import List
 
+from sqlalchemy.orm import sessionmaker
+
 import src.models as models
-from src.constants import DEFAULT_MAX_MEMORY_FOOTPRINT, DATASET_PATHS
+from src.constants import DATASET_PATHS
 from src.dataset_parser import DatasetParser
 
 DATASETS_DIR = './datasets'
@@ -15,7 +16,6 @@ class TestDataSetParser(unittest.TestCase):
         cls.dataset_parser = DatasetParser(
             root=DATASETS_DIR,
             resume=None,
-            max_footprint=DEFAULT_MAX_MEMORY_FOOTPRINT,
             dataset_paths=DATASET_PATHS,
             one=False,
             dry_run=False

@@ -10,13 +10,13 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 import src.models as models
-from src.utils import overwrite_upper_line, get_int, get_footprint, get_pretty_int
+from src.utils import overwrite_upper_line, get_int
 
 SQLITE_TYPE = 'sqlite:///'
 
 
 class DatasetParser:
-    def __init__(self, root, resume, max_footprint: int, dataset_paths: List, one: bool, dry_run:bool):
+    def __init__(self, root, resume, dataset_paths: List, one: bool, dry_run: bool):
         self.engine = None
         self.metadata = None
         self.resume = resume
@@ -30,7 +30,6 @@ class DatasetParser:
             self.dataset_paths = [self.dataset_paths[0]]
 
         self.root = root
-        self.max_footprint = max_footprint
         self.dry_run = dry_run
         self.echo = False
         self.db_uri = None
@@ -75,23 +74,24 @@ class DatasetParser:
             dataset = parse_handler(join(self.root, dataset_path))
             self._insert_dataset(dataset, status_line)
 
-        print(f"Invalid dataset ids:{self.invalid_ids}")
+        print(f"Invalid dataset ids:\n\t {dict(self.invalid_ids)}")
 
     def _get_parse_handler(self, table_name):
         return getattr(self, f'_parse_{table_name}')
 
     def _insert_dataset(self, dataset_iter: Iterator, status_line: str):
-        conn = self.engine.connect()
-        for idx, (statement, data_line, progress) in enumerate(dataset_iter):
-            overwrite_upper_line(self._get_status_line(status_line, progress))
-            conn.execute(statement, **data_line)
+        with self.engine.begin() as conn:
+            for idx, (statement, data_line, progress) in enumerate(dataset_iter):
+                overwrite_upper_line(self._get_status_line(status_line, progress))
+                conn.execute(statement, **data_line)
+
+            overwrite_upper_line(
+                f'{self._get_status_line(status_line, 100)} committing ...'
+            )
 
     @staticmethod
     def _get_status_line(status_line, progress):
-        return f'{status_line}: {progress:.2f}%\tmemory footprint: {get_pretty_int(get_footprint())}'
-
-    def _is_time_for_commit(self):
-        return self.max_footprint < get_footprint()
+        return f'{status_line}: {progress:.2f}%'
 
     def _get_session(self):
         return sessionmaker(bind=self.engine)()
