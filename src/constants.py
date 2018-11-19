@@ -6,3 +6,4 @@ DATASET_PATHS = [('title', TITLES_DATASET),
                  ('name', NAMES_DATASET),
                  ('principals', PRINCIPALS_DATASET),
                  ('ratings', RATINGS_DATASET)]
+DEFAULT_DATABASE_URI = "postgresql://postgres@127.0.0.1:5433/postgres"

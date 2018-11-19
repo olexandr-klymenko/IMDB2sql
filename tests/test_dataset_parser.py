@@ -4,7 +4,7 @@ from typing import List
 from sqlalchemy.orm import sessionmaker
 
 import src.models as models
-from src.constants import DATASET_PATHS
+from src.constants import DATASET_PATHS, DEFAULT_DATABASE_URI
 from src.dataset_parser import DatasetParser
 
 DATASETS_DIR = './datasets'
@@ -20,7 +20,7 @@ class TestDataSetParser(unittest.TestCase):
             one=False,
             dry_run=False
         )
-        cls.dataset_parser.db_init('sqlite:///:memory:')
+        cls.dataset_parser.db_init(DEFAULT_DATABASE_URI)
 
     def setUp(self):
         self.dataset_parser.parse_data_sets()

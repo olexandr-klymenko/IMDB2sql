@@ -68,11 +68,11 @@ class DatasetParser:
         print(f"Size of 'self.name_ids': {sys.getsizeof(self.name_ids)}")
 
     def parse_data_sets(self):
+        self.clean_up()
         for table_name, dataset_path in self.dataset_paths:
-            status_line = f"Parsing '{dataset_path}' into '{table_name}' table ..."
             parse_handler = self._get_parse_handler(table_name)
             dataset = parse_handler(join(self.root, dataset_path))
-            self._insert_dataset(dataset, status_line)
+            self._insert_dataset(dataset, f"Parsing '{dataset_path}' into '{table_name}' table ...")
 
         print(f"Invalid dataset ids:\n\t {dict(self.invalid_ids)}")
 
@@ -80,6 +80,7 @@ class DatasetParser:
         return getattr(self, f'_parse_{table_name}')
 
     def _insert_dataset(self, dataset_iter: Iterator, status_line: str):
+        print(f'{self._get_status_line(status_line, 100)} ...')
         with self.engine.begin() as conn:
             for idx, (statement, data_line, progress) in enumerate(dataset_iter):
                 overwrite_upper_line(self._get_status_line(status_line, progress))
@@ -88,6 +89,9 @@ class DatasetParser:
             overwrite_upper_line(
                 f'{self._get_status_line(status_line, 100)} committing ...'
             )
+        overwrite_upper_line(
+            f'{self._get_status_line(status_line, 100)} done'
+        )
 
     @staticmethod
     def _get_status_line(status_line, progress):
@@ -97,7 +101,6 @@ class DatasetParser:
         return sessionmaker(bind=self.engine)()
 
     def _parse_title(self, dataset_path):
-        self.clean_table(models.Title)
         statement = models.Title.__table__.insert()
         for data_set_class, progress in self._parse_dataset(dataset_path, 'title'):
             title_id = get_int(getattr(data_set_class, 'tconst'))
@@ -117,7 +120,6 @@ class DatasetParser:
             yield statement, data_line, progress
 
     def _parse_name(self, dataset_path):
-        self.clean_table(models.Name)
         statement = models.Name.__table__.insert()
         for data_set_class, progress in self._parse_dataset(dataset_path, 'name'):
             name_id = get_int(getattr(data_set_class, 'nconst'))
@@ -134,7 +136,6 @@ class DatasetParser:
 
             yield from self._get_name_title_data(data_set_class, name_id, progress)
 
-
     def _get_name_title_data(self, data_set_class, name_id, progress):
         statement = models.NameTitle.insert()
         titles = [get_int(el) for el in getattr(data_set_class, 'knownForTitles').split(',') if get_int(el)]
@@ -147,7 +148,6 @@ class DatasetParser:
                 yield statement, data_line, progress
 
     def _parse_principals(self, dataset_path):
-        self.clean_table(models.Principals)
         statement = models.Principals.__table__.insert()
         for data_set_class, progress in self._parse_dataset(dataset_path, 'principals'):
             title_id = get_int(getattr(data_set_class, 'tconst'))
@@ -164,7 +164,6 @@ class DatasetParser:
                 yield statement, data_line, progress
 
     def _parse_ratings(self, dataset_path):
-        self.clean_table(models.Ratings)
         statement = models.Ratings.__table__.insert()
         for data_set_class, progress in self._parse_dataset(dataset_path, 'ratings'):
             title_id = get_int(getattr(data_set_class, 'tconst'))
@@ -197,14 +196,22 @@ class DatasetParser:
             return value
 
     def clean_up(self):
-        for table in reversed(self.metadata.sorted_tables):
+        tables = self._get_sorted_tables(self.metadata.sorted_tables)
+        for table in tables:
+            print(f"Cleaning up table '{table.name}' ...")
             self.engine.execute(table.delete())
+            if table.name == self.resume:
+                break
 
-    def clean_table(self, model):
-        print(f"Cleaning up table '{model.__tablename__}' ...")
-        session = self._get_session()
-        session.query(model).delete()
-        session.commit()
+    def _get_sorted_tables(self, tables):
+        sorted_tables = []
+        for data_set_name in reversed([el[0] for el in self.dataset_paths]):
+            for table in tables:
+                if table.name == data_set_name:
+                    sorted_tables.append(table)
+                    break
+        sorted_tables.insert(0, models.NameTitle)
+        return sorted_tables
 
 # TODO: Implement data set fields validation
 # TODO: Implement decorator with arguments instead of _get_parse_handler
