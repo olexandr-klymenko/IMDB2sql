@@ -38,8 +38,7 @@ if __name__ == '__main__':
     cmd_line_parser.add_argument('--download', '-d', action="store_true")
     cmd_line_parser.add_argument('--extract', '-x', action="store_true")
     cmd_line_parser.add_argument('--parse', '-p', action="store_true")
-    cmd_line_parser.add_argument('--dburi', '-db', choices=[DEFAULT_DATABASE_URI, "sqlite:///imdb.db"],
-                                 default='sqlite:///:memory:', help='Database URI')
+    cmd_line_parser.add_argument('--dburi', '-db', default=DEFAULT_DATABASE_URI, help='Database URI')
     cmd_line_parser.add_argument('--resume', choices=['name', 'principals', 'ratings'], default=None,
                                  help='Start parsing not from first table')
     cmd_line_parser.add_argument('--one', help="Parse only one table", action="store_true")

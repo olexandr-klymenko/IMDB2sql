@@ -35,8 +35,8 @@ class DatasetParser:
         self.db_uri = None
         self.name_title: List[Dict] = []
         self.invalid_ids = defaultdict(set)
-        self.title_ids = set()
-        self.name_ids = set()
+        self.title_ids = {}
+        self.name_ids = {}
 
     def db_init(self, db_uri: str):
         if db_uri.endswith('.db') or db_uri.startswith(SQLITE_TYPE):
@@ -59,12 +59,12 @@ class DatasetParser:
         session = self._get_session()
         print("Filling title ids collection ...")
         for result in session.query(models.Title.id).all():
-            self.title_ids.add(result[0])
+            self.title_ids[result[0]] = None
         print(f"Size of 'self.title_ids': {sys.getsizeof(self.title_ids)}")
 
         print("Filling name ids collection ...")
         for result in session.query(models.Name.id).all():
-            self.name_ids.add(result[0])
+            self.name_ids[result[0]] = None
         print(f"Size of 'self.name_ids': {sys.getsizeof(self.name_ids)}")
 
     def parse_data_sets(self):
@@ -84,7 +84,8 @@ class DatasetParser:
         with self.engine.begin() as conn:
             for idx, (statement, data_line, progress) in enumerate(dataset_iter):
                 overwrite_upper_line(self._get_status_line(status_line, progress))
-                conn.execute(statement.execution_options(autocommit=False), **data_line)
+                if not self.dry_run:
+                    conn.execute(statement.execution_options(autocommit=False), **data_line)
 
             overwrite_upper_line(
                 f'{self._get_status_line(status_line, 100)} committing ...'
@@ -102,45 +103,54 @@ class DatasetParser:
 
     def _parse_title(self, dataset_path):
         statement = models.Title.__table__.insert()
-        for data_set_class, progress in self._parse_dataset(dataset_path, 'title'):
-            title_id = get_int(getattr(data_set_class, 'tconst'))
-            self.title_ids.add(title_id)
-            data_line = {
-                "id": title_id,
-                "title_type": getattr(data_set_class, 'titleType'),
-                "primary_title": getattr(data_set_class, 'primaryTitle'),
-                "original_title": getattr(data_set_class, 'originalTitle'),
-                "is_adult": bool(getattr(data_set_class, 'isAdult')),
-                "start_year": self._get_null(getattr(data_set_class, 'startYear')),
-                "end_year": self._get_null(getattr(data_set_class, 'endYear')),
-                "runtime_minutes": self._get_null(getattr(data_set_class, 'runtimeMinutes')),
-                "genres": getattr(data_set_class, 'genres'),
-            }
-
-            yield statement, data_line, progress
+        for data, progress in self._parse_dataset(dataset_path):
+            title_id = get_int(data['tconst'])
+            try:
+                data_line = {
+                    "id": title_id,
+                    "title_type": data['titleType'],
+                    "primary_title": data['primaryTitle'],
+                    "original_title": data['originalTitle'],
+                    "is_adult": bool(data['isAdult']),
+                    "start_year": self._get_null(data['startYear']),
+                    "end_year": self._get_null(data['endYear']),
+                    "runtime_minutes": self._get_null(data['runtimeMinutes']),
+                    "genres": data['genres'],
+                }
+            except KeyError:
+                self.invalid_ids['title'].add(title_id)
+            else:
+                self.title_ids[title_id] = None
+                yield statement, data_line, progress
 
     def _parse_name(self, dataset_path):
         statement = models.Name.__table__.insert()
-        for data_set_class, progress in self._parse_dataset(dataset_path, 'name'):
-            name_id = get_int(getattr(data_set_class, 'nconst'))
-            self.name_ids.add(name_id)
+        for data, progress in self._parse_dataset(dataset_path):
+            name_id = get_int(data['nconst'])
+            try:
+                data_line = {
+                    "id": name_id,
+                    "primary_name": data['primaryName'],
+                    "birth_year": self._get_null(data['birthYear']),
+                    "death_year": self._get_null(data['deathYear']),
+                    "primary_profession": data['primaryProfession']
+                }
+            except KeyError:
+                self.invalid_ids['name'].add(name_id)
+            else:
+                self.name_ids[name_id] = None
+                yield statement, data_line, progress
+                yield from self._get_name_title_data(data, name_id, progress)
 
-            data_line = {
-                "id": name_id,
-                "primary_name": getattr(data_set_class, 'primaryName'),
-                "birth_year": self._get_null(getattr(data_set_class, 'birthYear')),
-                "death_year": self._get_null(getattr(data_set_class, 'deathYear')),
-                "primary_profession": getattr(data_set_class, 'primaryProfession')
-            }
-            yield statement, data_line, progress
-
-            yield from self._get_name_title_data(data_set_class, name_id, progress)
-
-    def _get_name_title_data(self, data_set_class, name_id, progress):
+    def _get_name_title_data(self, data, name_id, progress):
         statement = models.NameTitle.insert()
-        titles = [get_int(el) for el in getattr(data_set_class, 'knownForTitles').split(',') if get_int(el)]
+        titles = [get_int(el) for el in data['knownForTitles'].split(',') if get_int(el)]
         for title_id in titles:
-            if title_id in self.title_ids:
+            try:
+                _ = self.title_ids[title_id]
+            except KeyError:
+                pass
+            else:
                 data_line = {
                     "name_id": name_id,
                     "title_id": title_id
@@ -149,15 +159,20 @@ class DatasetParser:
 
     def _parse_principals(self, dataset_path):
         statement = models.Principals.__table__.insert()
-        for data_set_class, progress in self._parse_dataset(dataset_path, 'principals'):
-            title_id = get_int(getattr(data_set_class, 'tconst'))
-            name_id = get_int(getattr(data_set_class, 'nconst'))
-            if title_id in self.title_ids and name_id in self.name_ids:
+        for data, progress in self._parse_dataset(dataset_path):
+            title_id = get_int(data['tconst'])
+            name_id = get_int(data['nconst'])
+            try:
+                _ = self.title_ids[title_id]
+                __ = self.name_ids[name_id]
+            except KeyError:
+                pass
+            else:
                 data_line = {
-                    "ordering": getattr(data_set_class, 'ordering'),
-                    "category": getattr(data_set_class, 'category'),
-                    "job": self._get_null(getattr(data_set_class, 'job')),
-                    "characters": self._get_null(getattr(data_set_class, 'characters')),
+                    "ordering": data['ordering'],
+                    "category": data['category'],
+                    "job": self._get_null(data['job']),
+                    "characters": self._get_null(data['characters']),
                     "name_id": name_id,
                     "title_id": title_id,
                 }
@@ -165,30 +180,31 @@ class DatasetParser:
 
     def _parse_ratings(self, dataset_path):
         statement = models.Ratings.__table__.insert()
-        for data_set_class, progress in self._parse_dataset(dataset_path, 'ratings'):
-            title_id = get_int(getattr(data_set_class, 'tconst'))
-            if title_id in self.title_ids:
+        for data, progress in self._parse_dataset(dataset_path):
+            title_id = get_int(data['tconst'])
+            try:
+                _ = self.title_ids[title_id]
+            except KeyError:
+                pass
+            else:
                 data_line = {
-                    "average_rating": getattr(data_set_class, 'averageRating'),
-                    "num_votes": getattr(data_set_class, 'numVotes'),
+                    "average_rating": data['averageRating'],
+                    "num_votes": data['numVotes'],
                     "title_id": title_id,
                 }
                 yield statement, data_line, progress
 
-    def _parse_dataset(self, file_path, table_name):
+    @staticmethod
+    def _parse_dataset(file_path):
         size = getsize(file_path)
         read_size = 0
         with open(file_path) as fd:
             tsv_reader = csv.reader(fd, delimiter='\t')
-            data_set_class = namedtuple('_', next(tsv_reader))
+            headers = next(tsv_reader)
             for line in tsv_reader:
                 read_size += len(''.join(line)) + len(line)
-
-                try:
-                    data = data_set_class(*line)
-                    yield data, (read_size / size) * 100
-                except TypeError:
-                    self.invalid_ids[table_name].add(get_int(line[0]))
+                data = dict(zip(headers, line))
+                yield data, (read_size / size) * 100
 
     @staticmethod
     def _get_null(value):
@@ -196,12 +212,13 @@ class DatasetParser:
             return value
 
     def clean_up(self):
-        tables = self._get_sorted_tables(self.metadata.sorted_tables)
-        for table in tables:
-            print(f"Cleaning up table '{table.name}' ...")
-            self.engine.execute(table.delete())
-            if table.name == self.resume:
-                break
+        if not self.dry_run:
+            tables = self._get_sorted_tables(self.metadata.sorted_tables)
+            for table in tables:
+                print(f"Cleaning up table '{table.name}' ...")
+                self.engine.execute(table.delete())
+                if table.name == self.resume:
+                    break
 
     def _get_sorted_tables(self, tables):
         sorted_tables = []
