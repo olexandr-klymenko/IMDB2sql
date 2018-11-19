@@ -83,7 +83,7 @@ class DatasetParser:
         with self.engine.begin() as conn:
             for idx, (statement, data_line, progress) in enumerate(dataset_iter):
                 overwrite_upper_line(self._get_status_line(status_line, progress))
-                conn.execute(statement, **data_line)
+                conn.execute(statement.execution_options(autocommit=False), **data_line)
 
             overwrite_upper_line(
                 f'{self._get_status_line(status_line, 100)} committing ...'
@@ -123,8 +123,6 @@ class DatasetParser:
             name_id = get_int(getattr(data_set_class, 'nconst'))
             self.name_ids.add(name_id)
 
-            yield from self._get_name_title_data(data_set_class, name_id, progress)
-
             data_line = {
                 "id": name_id,
                 "primary_name": getattr(data_set_class, 'primaryName'),
@@ -133,6 +131,9 @@ class DatasetParser:
                 "primary_profession": getattr(data_set_class, 'primaryProfession')
             }
             yield statement, data_line, progress
+
+            yield from self._get_name_title_data(data_set_class, name_id, progress)
+
 
     def _get_name_title_data(self, data_set_class, name_id, progress):
         statement = models.NameTitle.insert()
