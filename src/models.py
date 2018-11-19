@@ -8,8 +8,8 @@ Base = declarative_base(metadata=MetaData())
 
 NameTitle = Table('NameTitle',
                   Base.metadata,
-                  Column('nameId', Integer, ForeignKey('name.id')),
-                  Column('titleId', Integer, ForeignKey('title.id'))
+                  Column('name_id', Integer, ForeignKey('name.id')),
+                  Column('title_id', Integer, ForeignKey('title.id'))
                   )
 
 
@@ -17,13 +17,13 @@ class Title(Base):
     __tablename__ = 'title'
 
     id = Column(Integer, primary_key=True)
-    titleType = Column(String(20))
-    primaryTitle = Column(String(450))
-    originalTitle = Column(String(450))
-    isAdult = Column(Boolean)
-    startYear = Column(Integer)
-    endYear = Column(Integer, nullable=True)
-    runtimeMinutes = Column(Integer)
+    title_type = Column(String(20))
+    primary_title = Column(String(450))
+    original_title = Column(String(450))
+    is_adult = Column(Boolean)
+    start_year = Column(Integer)
+    end_year = Column(Integer, nullable=True)
+    runtime_minutes = Column(Integer)
     genres = Column(String(40))
 
     names = relationship("Name", secondary=NameTitle, backref='title')
@@ -33,10 +33,10 @@ class Name(Base):
     __tablename__ = 'name'
 
     id = Column(Integer, primary_key=True)
-    primaryName = Column(String(120))
-    birthYear = Column(Integer)
-    deathYear = Column(Integer, nullable=True)
-    primaryProfession = Column(String(70))
+    primary_name = Column(String(120))
+    birth_year = Column(Integer)
+    death_year = Column(Integer, nullable=True)
+    primary_profession = Column(String(70))
 
     titles = relationship("Title", secondary=NameTitle, backref='name')
 
@@ -61,8 +61,8 @@ class Ratings(Base):
     __tablename__ = 'ratings'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    averageRating = Column(Float)
-    numVotes = Column(Integer)
+    average_rating = Column(Float)
+    num_votes = Column(Integer)
 
     title_id = Column(Integer, ForeignKey('title.id'))
     title = relationship("Title", uselist=False)

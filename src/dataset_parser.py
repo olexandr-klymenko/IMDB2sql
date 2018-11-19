@@ -1,24 +1,22 @@
-import gc
-import sys
-from collections import namedtuple, defaultdict
-
 import csv
 import os
 import sqlite3
+import sys
+from collections import namedtuple, defaultdict
 from os.path import join, getsize, exists
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 from typing import Iterator, List, Dict
 
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
 import src.models as models
-from src.constants import SKIP_CYCLES_NUM
 from src.utils import overwrite_upper_line, get_int, get_footprint, get_pretty_int
 
 SQLITE_TYPE = 'sqlite:///'
 
 
 class DatasetParser:
-    def __init__(self, root, resume, max_footprint: int, dataset_paths: List, one: bool):
+    def __init__(self, root, resume, max_footprint: int, dataset_paths: List, one: bool, dry_run:bool):
         self.engine = None
         self.metadata = None
         self.resume = resume
@@ -33,9 +31,9 @@ class DatasetParser:
 
         self.root = root
         self.max_footprint = max_footprint
+        self.dry_run = dry_run
         self.echo = False
         self.db_uri = None
-        self.buffer = []
         self.name_title: List[Dict] = []
         self.invalid_ids = defaultdict(set)
         self.title_ids = set()
@@ -83,22 +81,10 @@ class DatasetParser:
         return getattr(self, f'_parse_{table_name}')
 
     def _insert_dataset(self, dataset_iter: Iterator, status_line: str):
-        start_progress = 0
-        for idx, (line, progress) in enumerate(dataset_iter):
-            self.buffer.append(line)
-            if progress - start_progress > 0.01:
-                start_progress += 0.01
-
-                if idx % SKIP_CYCLES_NUM == 0:
-                    overwrite_upper_line(self._get_status_line(status_line, progress))
-
-                    if self._is_time_for_commit():
-                        self._commit_batch_and_free_memory(status_line, progress)
-
-                        overwrite_upper_line(f'{status_line}: {progress :.2f}%')
-
-        self._commit_batch_and_free_memory(status_line, 100)
-        overwrite_upper_line(f'{status_line}: 100% Done')
+        conn = self.engine.connect()
+        for idx, (statement, data_line, progress) in enumerate(dataset_iter):
+            overwrite_upper_line(self._get_status_line(status_line, progress))
+            conn.execute(statement, **data_line)
 
     @staticmethod
     def _get_status_line(status_line, progress):
@@ -107,95 +93,87 @@ class DatasetParser:
     def _is_time_for_commit(self):
         return self.max_footprint < get_footprint()
 
-    def _commit_batch_and_free_memory(self, status_line, progress):
-        overwrite_upper_line(
-            f'{self._get_status_line(status_line, progress)} committing ...'
-        )
-        self._commit_buffer()
-        self._commit_name_title_table()
-        gc.collect()
-
-    def _commit_buffer(self):
-        session = self._get_session()
-        session.add_all(self.buffer)
-        session.commit()
-        self.buffer = []
-
-    def _commit_name_title_table(self):
-        if self.name_title:
-            self.engine.execute(models.NameTitle.insert(), self.name_title)
-            session = self._get_session()
-            session.commit()
-            self.name_title = []
-
     def _get_session(self):
         return sessionmaker(bind=self.engine)()
 
     def _parse_title(self, dataset_path):
         self.clean_table(models.Title)
+        statement = models.Title.__table__.insert()
         for data_set_class, progress in self._parse_dataset(dataset_path, 'title'):
             title_id = get_int(getattr(data_set_class, 'tconst'))
             self.title_ids.add(title_id)
-            title_line = models.Title(
-                id=title_id,
-                titleType=getattr(data_set_class, 'titleType'),
-                primaryTitle=getattr(data_set_class, 'primaryTitle'),
-                originalTitle=getattr(data_set_class, 'originalTitle'),
-                isAdult=bool(getattr(data_set_class, 'isAdult')),
-                startYear=self._get_null(getattr(data_set_class, 'startYear')),
-                endYear=self._get_null(getattr(data_set_class, 'endYear')),
-                runtimeMinutes=self._get_null(getattr(data_set_class, 'runtimeMinutes')),
-                genres=getattr(data_set_class, 'genres'),
-            )
-            yield title_line, progress
+            data_line = {
+                "id": title_id,
+                "title_type": getattr(data_set_class, 'titleType'),
+                "primary_title": getattr(data_set_class, 'primaryTitle'),
+                "original_title": getattr(data_set_class, 'originalTitle'),
+                "is_adult": bool(getattr(data_set_class, 'isAdult')),
+                "start_year": self._get_null(getattr(data_set_class, 'startYear')),
+                "end_year": self._get_null(getattr(data_set_class, 'endYear')),
+                "runtime_minutes": self._get_null(getattr(data_set_class, 'runtimeMinutes')),
+                "genres": getattr(data_set_class, 'genres'),
+            }
+
+            yield statement, data_line, progress
 
     def _parse_name(self, dataset_path):
         self.clean_table(models.Name)
+        statement = models.Name.__table__.insert()
         for data_set_class, progress in self._parse_dataset(dataset_path, 'name'):
             name_id = get_int(getattr(data_set_class, 'nconst'))
             self.name_ids.add(name_id)
-            titles = [get_int(el) for el in getattr(data_set_class, 'knownForTitles').split(',') if get_int(el)]
-            for title_id in titles:
-                if title_id in self.title_ids:
-                    self.name_title.append({'nameId': name_id, 'titleId': title_id})
 
-            name_line = models.Name(
-                id=get_int(getattr(data_set_class, 'nconst')),
-                primaryName=getattr(data_set_class, 'primaryName'),
-                birthYear=self._get_null(getattr(data_set_class, 'birthYear')),
-                deathYear=self._get_null(getattr(data_set_class, 'deathYear')),
-                primaryProfession=getattr(data_set_class, 'primaryProfession'),
-            )
+            yield from self._get_name_title_data(data_set_class, name_id, progress)
 
-            yield name_line, progress
+            data_line = {
+                "id": name_id,
+                "primary_name": getattr(data_set_class, 'primaryName'),
+                "birth_year": self._get_null(getattr(data_set_class, 'birthYear')),
+                "death_year": self._get_null(getattr(data_set_class, 'deathYear')),
+                "primary_profession": getattr(data_set_class, 'primaryProfession')
+            }
+            yield statement, data_line, progress
+
+    def _get_name_title_data(self, data_set_class, name_id, progress):
+        statement = models.NameTitle.insert()
+        titles = [get_int(el) for el in getattr(data_set_class, 'knownForTitles').split(',') if get_int(el)]
+        for title_id in titles:
+            if title_id in self.title_ids:
+                data_line = {
+                    "name_id": name_id,
+                    "title_id": title_id
+                }
+                yield statement, data_line, progress
 
     def _parse_principals(self, dataset_path):
         self.clean_table(models.Principals)
+        statement = models.Principals.__table__.insert()
         for data_set_class, progress in self._parse_dataset(dataset_path, 'principals'):
             title_id = get_int(getattr(data_set_class, 'tconst'))
             name_id = get_int(getattr(data_set_class, 'nconst'))
             if title_id in self.title_ids and name_id in self.name_ids:
-                principals_line = models.Principals(
-                    ordering=getattr(data_set_class, 'ordering'),
-                    category=getattr(data_set_class, 'category'),
-                    job=self._get_null(getattr(data_set_class, 'job')),
-                    characters=self._get_null(getattr(data_set_class, 'characters')),
-                    name_id=name_id,
-                    title_id=title_id
-                )
-                yield principals_line, progress
+                data_line = {
+                    "ordering": getattr(data_set_class, 'ordering'),
+                    "category": getattr(data_set_class, 'category'),
+                    "job": self._get_null(getattr(data_set_class, 'job')),
+                    "characters": self._get_null(getattr(data_set_class, 'characters')),
+                    "name_id": name_id,
+                    "title_id": title_id,
+                }
+                yield statement, data_line, progress
 
     def _parse_ratings(self, dataset_path):
         self.clean_table(models.Ratings)
+        statement = models.Ratings.__table__.insert()
         for data_set_class, progress in self._parse_dataset(dataset_path, 'ratings'):
             title_id = get_int(getattr(data_set_class, 'tconst'))
             if title_id in self.title_ids:
-                ratings_line = models.Ratings(
-                    averageRating=getattr(data_set_class, 'averageRating'),
-                    numVotes=getattr(data_set_class, 'numVotes'),
-                    title_id=title_id
-                )
-                yield ratings_line, progress
+                data_line = {
+                    "average_rating": getattr(data_set_class, 'averageRating'),
+                    "num_votes": getattr(data_set_class, 'numVotes'),
+                    "title_id": title_id,
+                }
+                yield statement, data_line, progress
 
     def _parse_dataset(self, file_path, table_name):
         size = getsize(file_path)
@@ -228,3 +206,4 @@ class DatasetParser:
         session.commit()
 
 # TODO: Implement data set fields validation
+# TODO: Implement decorator with arguments instead of _get_parse_handler

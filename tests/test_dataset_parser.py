@@ -17,7 +17,8 @@ class TestDataSetParser(unittest.TestCase):
             resume=None,
             max_footprint=DEFAULT_MAX_MEMORY_FOOTPRINT,
             dataset_paths=DATASET_PATHS,
-            one=False
+            one=False,
+            dry_run=False
         )
         cls.dataset_parser.db_init('sqlite:///:memory:')
 
@@ -30,7 +31,7 @@ class TestDataSetParser(unittest.TestCase):
 
     def test_names(self):
         name_model: models.Name = self.session.query(models.Name).filter(models.Name.id == 9).all()[0]
-        self.assertEqual(name_model.primaryProfession, 'actor,producer,soundtrack')
+        self.assertEqual(name_model.primary_profession, 'actor,producer,soundtrack')
         self.assertEqual(
             set([title.id for title in name_model.titles]), {1, 2, 3, 4}
         )
@@ -38,7 +39,7 @@ class TestDataSetParser(unittest.TestCase):
 
     def test_titles(self):
         title_model: models.Title = self.session.query(models.Title).filter(models.Title.id == 2).all()[0]
-        self.assertEqual(title_model.originalTitle, 'Le clown et ses chiens')
+        self.assertEqual(title_model.original_title, 'Le clown et ses chiens')
         self.assertEqual(
             set(name.id for name in title_model.names), {1, 6, 9}
         )
@@ -49,15 +50,15 @@ class TestDataSetParser(unittest.TestCase):
         ).filter(models.Principals.title_id == 1).all()
         self.assertEqual(len(query), 4)
         for principal in query:
-            self.assertIn(principal.category, principal.name.primaryProfession.split(','))
+            self.assertIn(principal.category, principal.name.primary_profession.split(','))
 
     def test_ratings(self):
         query: List[models.Ratings] = self.session.query(
             models.Ratings
         ).filter(models.Ratings.title_id == 1).all()
         self.assertEqual(len(query), 1)
-        self.assertEqual(query[0].averageRating, 5.8)
-        self.assertEqual(query[0].numVotes, 1396)
+        self.assertEqual(query[0].average_rating, 5.8)
+        self.assertEqual(query[0].num_votes, 1396)
         self.assertEqual(query[0].title.id, 1)
 
 # TODO: Cover all the rest of cases with different args
