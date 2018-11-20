@@ -84,10 +84,9 @@ class DatasetParser:
     def _parse_title(self, dataset_path):
         statement = models.Title.__table__.insert()
         for data, progress in self._parse_dataset(dataset_path):
-            title_id = get_int(data['tconst'])
             try:
                 data_line = {
-                    "id": title_id,
+                    "id": get_int(data['tconst']),
                     "title_type": data['titleType'],
                     "primary_title": data['primaryTitle'],
                     "original_title": data['originalTitle'],
@@ -134,26 +133,23 @@ class DatasetParser:
     def _parse_principals(self, dataset_path):
         statement = models.Principals.__table__.insert()
         for data, progress in self._parse_dataset(dataset_path):
-            title_id = get_int(data['tconst'])
-            name_id = get_int(data['nconst'])
             data_line = {
                 "ordering": data['ordering'],
                 "category": data['category'],
                 "job": self._get_null(data['job']),
                 "characters": self._get_null(data['characters']),
-                "name_id": name_id,
-                "title_id": title_id,
+                "name_id": get_int(data['nconst']),
+                "title_id": get_int(data['tconst']),
             }
             yield statement, data_line, progress
 
     def _parse_ratings(self, dataset_path):
         statement = models.Ratings.__table__.insert()
         for data, progress in self._parse_dataset(dataset_path):
-            title_id = get_int(data['tconst'])
             data_line = {
                 "average_rating": data['averageRating'],
                 "num_votes": data['numVotes'],
-                "title_id": title_id,
+                "title_id": get_int(data['tconst']),
             }
             yield statement, data_line, progress
 
