@@ -35,7 +35,10 @@ class TestDataSetParser(unittest.TestCase):
         self.assertEqual(
             set([title.id for title in name_model.titles]), {1, 2, 3, 4}
         )
-        self.assertNotIn(9, self.dataset_parser.title_ids)
+        self.assertEqual(self.dataset_parser.errors, {
+            'NameTitle': {'name_id': 7, 'title_id': 18},
+            'ratings': {'average_rating': '5.5', 'num_votes': '67', 'title_id': 9}
+        })
 
     def test_titles(self):
         title_model: models.Title = self.session.query(models.Title).filter(models.Title.id == 2).all()[0]

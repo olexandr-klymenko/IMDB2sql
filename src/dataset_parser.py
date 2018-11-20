@@ -1,14 +1,13 @@
-import sys
-from collections import defaultdict
-
 import csv
 import os
 import sqlite3
+from collections import defaultdict
 from os.path import join, getsize, exists
+from typing import Iterator, List
+
 from sqlalchemy import create_engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
-from typing import Iterator, List
 
 import src.models as models
 from src.utils import overwrite_upper_line, get_int
