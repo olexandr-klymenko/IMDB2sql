@@ -1,13 +1,14 @@
+import sys
+from collections import defaultdict
+
 import csv
 import os
 import sqlite3
-import sys
-from collections import namedtuple, defaultdict
 from os.path import join, getsize, exists
-from typing import Iterator, List, Dict
-
 from sqlalchemy import create_engine
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
+from typing import Iterator, List
 
 import src.models as models
 from src.utils import overwrite_upper_line, get_int
@@ -33,10 +34,7 @@ class DatasetParser:
         self.dry_run = dry_run
         self.echo = False
         self.db_uri = None
-        self.name_title: List[Dict] = []
-        self.invalid_ids = defaultdict(set)
-        self.title_ids = {}
-        self.name_ids = {}
+        self.errors = defaultdict(set)
 
     def db_init(self, db_uri: str):
         if db_uri.endswith('.db') or db_uri.startswith(SQLITE_TYPE):
@@ -52,21 +50,6 @@ class DatasetParser:
         self.metadata.create_all(bind=self.engine)
         self.metadata.reflect(bind=self.engine)
 
-        if self.resume:
-            self._set_foreign_keys()
-
-    def _set_foreign_keys(self):
-        session = self._get_session()
-        print("Filling title ids collection ...")
-        for result in session.query(models.Title.id).all():
-            self.title_ids[result[0]] = None
-        print(f"Size of 'self.title_ids': {sys.getsizeof(self.title_ids)}")
-
-        print("Filling name ids collection ...")
-        for result in session.query(models.Name.id).all():
-            self.name_ids[result[0]] = None
-        print(f"Size of 'self.name_ids': {sys.getsizeof(self.name_ids)}")
-
     def parse_data_sets(self):
         self.clean_up()
         for table_name, dataset_path in self.dataset_paths:
@@ -74,22 +57,20 @@ class DatasetParser:
             dataset = parse_handler(join(self.root, dataset_path))
             self._insert_dataset(dataset, f"Parsing '{dataset_path}' into '{table_name}' table ...")
 
-        print(f"Invalid dataset ids:\n\t {dict(self.invalid_ids)}")
+        print(f"Invalid dataset ids:\n\t {dict(self.errors)}")
 
     def _get_parse_handler(self, table_name):
         return getattr(self, f'_parse_{table_name}')
 
     def _insert_dataset(self, dataset_iter: Iterator, status_line: str):
         print(f'{self._get_status_line(status_line, 100)} ...')
-        with self.engine.begin() as conn:
-            for idx, (statement, data_line, progress) in enumerate(dataset_iter):
-                overwrite_upper_line(self._get_status_line(status_line, progress))
-                if not self.dry_run:
-                    conn.execute(statement.execution_options(autocommit=False), **data_line)
-
-            overwrite_upper_line(
-                f'{self._get_status_line(status_line, 100)} committing ...'
-            )
+        for idx, (statement, data_line, progress) in enumerate(dataset_iter):
+            overwrite_upper_line(self._get_status_line(status_line, progress))
+            if not self.dry_run:
+                try:
+                    self.engine.execute(statement, **data_line)
+                except IntegrityError:
+                    self.errors[statement.table.name] = data_line
         overwrite_upper_line(
             f'{self._get_status_line(status_line, 100)} done'
         )
@@ -118,9 +99,8 @@ class DatasetParser:
                     "genres": data['genres'],
                 }
             except KeyError:
-                self.invalid_ids['title'].add(title_id)
+                pass
             else:
-                self.title_ids[title_id] = None
                 yield statement, data_line, progress
 
     def _parse_name(self, dataset_path):
@@ -136,63 +116,47 @@ class DatasetParser:
                     "primary_profession": data['primaryProfession']
                 }
             except KeyError:
-                self.invalid_ids['name'].add(name_id)
+                pass
             else:
-                self.name_ids[name_id] = None
                 yield statement, data_line, progress
                 yield from self._get_name_title_data(data, name_id, progress)
 
-    def _get_name_title_data(self, data, name_id, progress):
+    @staticmethod
+    def _get_name_title_data(data, name_id, progress):
         statement = models.NameTitle.insert()
         titles = [get_int(el) for el in data['knownForTitles'].split(',') if get_int(el)]
         for title_id in titles:
-            try:
-                _ = self.title_ids[title_id]
-            except KeyError:
-                pass
-            else:
-                data_line = {
-                    "name_id": name_id,
-                    "title_id": title_id
-                }
-                yield statement, data_line, progress
+            data_line = {
+                "name_id": name_id,
+                "title_id": title_id
+            }
+            yield statement, data_line, progress
 
     def _parse_principals(self, dataset_path):
         statement = models.Principals.__table__.insert()
         for data, progress in self._parse_dataset(dataset_path):
             title_id = get_int(data['tconst'])
             name_id = get_int(data['nconst'])
-            try:
-                _ = self.title_ids[title_id]
-                __ = self.name_ids[name_id]
-            except KeyError:
-                pass
-            else:
-                data_line = {
-                    "ordering": data['ordering'],
-                    "category": data['category'],
-                    "job": self._get_null(data['job']),
-                    "characters": self._get_null(data['characters']),
-                    "name_id": name_id,
-                    "title_id": title_id,
-                }
-                yield statement, data_line, progress
+            data_line = {
+                "ordering": data['ordering'],
+                "category": data['category'],
+                "job": self._get_null(data['job']),
+                "characters": self._get_null(data['characters']),
+                "name_id": name_id,
+                "title_id": title_id,
+            }
+            yield statement, data_line, progress
 
     def _parse_ratings(self, dataset_path):
         statement = models.Ratings.__table__.insert()
         for data, progress in self._parse_dataset(dataset_path):
             title_id = get_int(data['tconst'])
-            try:
-                _ = self.title_ids[title_id]
-            except KeyError:
-                pass
-            else:
-                data_line = {
-                    "average_rating": data['averageRating'],
-                    "num_votes": data['numVotes'],
-                    "title_id": title_id,
-                }
-                yield statement, data_line, progress
+            data_line = {
+                "average_rating": data['averageRating'],
+                "num_votes": data['numVotes'],
+                "title_id": title_id,
+            }
+            yield statement, data_line, progress
 
     @staticmethod
     def _parse_dataset(file_path):
