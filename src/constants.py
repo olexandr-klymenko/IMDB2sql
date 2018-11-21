@@ -7,3 +7,4 @@ DATASET_PATHS = [('title', TITLES_DATASET),
                  ('principals', PRINCIPALS_DATASET),
                  ('ratings', RATINGS_DATASET)]
 DEFAULT_DATABASE_URI = "postgresql+psycopg2://postgres@127.0.0.1:5433/postgres"
+CSV_EXTENSION = 'csv'

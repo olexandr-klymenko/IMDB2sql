@@ -24,11 +24,7 @@ def main(cmd_args):
 
     if cmd_args.parse:
         dal = DatasetParser(dataset_paths=DATASET_PATHS,
-                            root=cmd_args.root,
-                            resume=cmd_args.resume,
-                            one=cmd_args.one,
-                            dry_run=cmd_args.dry)
-        dal.db_init(db_uri=cmd_args.dburi)
+                            root=cmd_args.root)
         dal.parse_data_sets()
 
 
@@ -42,7 +38,6 @@ if __name__ == '__main__':
     cmd_line_parser.add_argument('--resume', choices=['name', 'principals', 'ratings'], default=None,
                                  help='Start parsing not from first table')
     cmd_line_parser.add_argument('--one', help="Parse only one table", action="store_true")
-    cmd_line_parser.add_argument('-n', '--dry', help='Dry run', action="store_true")
     args = cmd_line_parser.parse_args()
     print(args)
     main(args)
