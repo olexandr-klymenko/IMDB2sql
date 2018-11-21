@@ -44,7 +44,7 @@ class Name(Base):
 class Principals(Base):
     __tablename__ = 'principals'
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(Integer, primary_key=True)
     ordering = Column(Integer)
     category = Column(String(20))
     job = Column(String(300))
@@ -60,7 +60,7 @@ class Principals(Base):
 class Ratings(Base):
     __tablename__ = 'ratings'
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(Integer, primary_key=True)
     average_rating = Column(Float)
     num_votes = Column(Integer)
 

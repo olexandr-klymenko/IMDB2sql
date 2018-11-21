@@ -30,7 +30,7 @@ class TestDataSetParser(unittest.TestCase):
         self.dataset_parser.clean_up()
 
     def test_names(self):
-        name_model: models.Name = self.session.query(models.Name).filter(models.Name.id == 9).all()[0]
+        name_model: models.Name = self.session.query(models.Name).filter(models.Name.nconst == 9).all()[0]
         self.assertEqual(name_model.primary_profession, 'actor,producer,soundtrack')
         self.assertEqual(
             set([title.id for title in name_model.titles]), {1, 2, 3, 4}
@@ -41,7 +41,7 @@ class TestDataSetParser(unittest.TestCase):
         })
 
     def test_titles(self):
-        title_model: models.Title = self.session.query(models.Title).filter(models.Title.id == 2).all()[0]
+        title_model: models.Title = self.session.query(models.Title).filter(models.Title.tconst == 2).all()[0]
         self.assertEqual(title_model.original_title, 'Le clown et ses chiens')
         self.assertEqual(
             set(name.id for name in title_model.names), {1, 6, 9}

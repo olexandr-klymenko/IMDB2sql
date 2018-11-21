@@ -4,7 +4,7 @@ from os.path import join, getsize
 from typing import Iterator, List
 
 from src.constants import CSV_EXTENSION
-from src.utils import overwrite_upper_line, get_int
+from src.utils import overwrite_upper_line, get_int, get_csv_filename
 
 
 class DatasetParser:
@@ -23,10 +23,10 @@ class DatasetParser:
     def _get_parse_handler(self, table_name):
         return getattr(self, f'_parse_{table_name}')
 
-    def _insert_dataset(self, dataset_iter: Iterator, dataset_path: str, table_name:str):
-        output_filename = f'{table_name}.{CSV_EXTENSION}'
+    def _insert_dataset(self, dataset_iter: Iterator, dataset_path: str, table_name: str):
+        output_filename = get_csv_filename(self.root, table_name)
         status_line = f"Parsing '{dataset_path}' into '{output_filename}' ..."
-        with open(join(self.root, output_filename), 'w') as dataset_out:
+        with open(output_filename, 'w') as dataset_out:
             writer = csv.writer(dataset_out)
             print(f'{self._get_status_line(status_line, 0)} ...')
             for idx, (data_line, progress) in enumerate(dataset_iter):
@@ -89,24 +89,26 @@ class DatasetParser:
                 yield data_line
 
     def _parse_principals(self, dataset_path):
-        for data, progress in self._parse_dataset(dataset_path):
+        for idx, (data, progress) in enumerate(self._parse_dataset(dataset_path)):
             name_id, title_id = get_int(data['nconst']), get_int(data['tconst'])
             if name_id in self.indices['name'] and title_id in self.indices['title']:
                 data_line = (
+                    idx,
                     data['ordering'],
                     data['category'],
                     self._get_null(data['job']),
                     self._get_null(data['characters']),
-                    name_id,
                     title_id,
+                    name_id,
                 )
                 yield data_line, progress
 
     def _parse_ratings(self, dataset_path):
-        for data, progress in self._parse_dataset(dataset_path):
+        for idx, (data, progress) in enumerate(self._parse_dataset(dataset_path)):
             title_id = get_int(data['tconst'])
             if title_id in self.indices['title']:
                 data_line = (
+                    idx,
                     data['averageRating'],
                     data['numVotes'],
                     title_id

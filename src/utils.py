@@ -3,6 +3,7 @@ from collections import namedtuple
 
 import gzip
 import os
+from os.path import join
 import psutil
 import re
 import tempfile
@@ -13,6 +14,8 @@ from bs4 import BeautifulSoup
 from multiprocessing import Pool
 from os.path import join, exists
 from typing import List, Dict, Union
+
+from src.constants import CSV_EXTENSION
 
 DATA_SET_FILENAME_PATTERN = re.compile('^/(.*).gz')
 CURSOR_UP_ONE = '\x1b[1A'
@@ -107,3 +110,7 @@ def get_footprint() -> int:
 
 def get_pretty_int(value: int) -> str:
     return "{:,}".format(value)
+
+
+def get_csv_filename(root, table_name):
+    return join(root, f'{table_name}.{CSV_EXTENSION}')
