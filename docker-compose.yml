@@ -1,5 +1,5 @@
 postgres:
-  container_name: postgres
+  container_name: imdb
   restart: always
   image: postgres:latest
   volumes:

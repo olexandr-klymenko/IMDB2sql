@@ -14,7 +14,7 @@ class DatasetParser:
         self.errors = defaultdict(set)
         self.indices = defaultdict(set)
 
-    def parse_data_sets(self):
+    def parse_dataset(self):
         for table_name, dataset_path in self.dataset_paths:
             parse_handler = self._get_parse_handler(table_name)
             dataset_iter = parse_handler(join(self.root, dataset_path))

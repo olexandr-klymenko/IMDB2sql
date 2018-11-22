@@ -85,7 +85,12 @@ class DataSetsHandler:
 
 # TODO: Implement GraphQL
 
-def overwrite_upper_line(content):
+def overwrite_upper_line(content: str):
+    """
+    Output string content in the current line by overwriting
+    :param content: string content
+    :return:
+    """
     sys.stdout.write(CURSOR_UP_ONE)
     sys.stdout.write(ERASE_LINE)
     print(content)

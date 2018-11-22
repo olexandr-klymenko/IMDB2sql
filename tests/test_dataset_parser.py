@@ -23,7 +23,7 @@ class TestDataSetParser(unittest.TestCase):
         cls.dataset_parser.db_init(DEFAULT_DATABASE_URI)
 
     def setUp(self):
-        self.dataset_parser.parse_data_sets()
+        self.dataset_parser.parse_dataset()
         self.session = sessionmaker(bind=self.dataset_parser.engine)()
 
     def tearDown(self):

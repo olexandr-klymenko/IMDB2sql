@@ -20,21 +20,22 @@ def main(cmd_args):
 
         if cmd_args.download:
             handler.download()
+
         if cmd_args.extract:
             handler.extract()
 
     if cmd_args.parse:
-        dal = DatasetParser(dataset_paths=DATASET_PATHS,
-                            root=cmd_args.root)
-        dal.parse_data_sets()
+        parser = DatasetParser(dataset_paths=DATASET_PATHS,
+                               root=cmd_args.root)
+        parser.parse_dataset()
 
     if cmd_args.load:
-        dal = DatasetLoader(dataset_paths=DATASET_PATHS,
-                            root=cmd_args.root,
-                            resume=cmd_args.resume,
-                            one=cmd_args.one)
-        dal.db_init(cmd_args.dburi)
-        dal.load_dataset()
+        loader = DatasetLoader(dataset_paths=DATASET_PATHS,
+                               root=cmd_args.root,
+                               resume=cmd_args.resume,
+                               one=cmd_args.one)
+        loader.db_init(cmd_args.dburi)
+        loader.load_dataset()
 
 
 if __name__ == '__main__':
