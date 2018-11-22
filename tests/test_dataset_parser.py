@@ -4,7 +4,7 @@ from typing import List
 from sqlalchemy.orm import sessionmaker
 
 import src.models as models
-from src.constants import DATASET_PATHS, DEFAULT_DATABASE_URI
+from src.constants import DEFAULT_DATABASE_URI
 from src.dataset_parser import DatasetParser
 
 DATASETS_DIR = './datasets'
@@ -64,5 +64,7 @@ class TestDataSetParser(unittest.TestCase):
         self.assertEqual(query[0].num_votes, 1396)
         self.assertEqual(query[0].title.id, 1)
 
+# TODO: Fix tests
+# TODO: Add test case for DatasetLoader
 # TODO: Cover all the rest of cases with different args
 # TODO: Increase datasets size in several times

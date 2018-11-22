@@ -1,21 +1,18 @@
-import sys
-from collections import namedtuple
-
 import gzip
 import os
-from os.path import join
-import psutil
 import re
+import sys
 import tempfile
 import urllib.parse
 import urllib.request
-import yaml
-from bs4 import BeautifulSoup
+from collections import namedtuple
 from multiprocessing import Pool
 from os.path import join, exists
 from typing import List, Dict, Union
 
-from src.constants import CSV_EXTENSION
+import psutil
+import yaml
+from bs4 import BeautifulSoup
 
 DATA_SET_FILENAME_PATTERN = re.compile('^/(.*).gz')
 CURSOR_UP_ONE = '\x1b[1A'
@@ -108,6 +105,11 @@ def get_int(id_: str) -> Union[int, None]:
         return None
 
 
+def get_null(value):
+    if value != '\\N':
+        return value
+
+
 def get_footprint() -> int:
     process = psutil.Process(os.getpid())
     return process.memory_info().rss
@@ -117,5 +119,5 @@ def get_pretty_int(value: int) -> str:
     return "{:,}".format(value)
 
 
-def get_csv_filename(root, table_name):
-    return join(root, f'{table_name}.{CSV_EXTENSION}')
+def get_csv_filename(csv_extension, root, table_name):
+    return join(root, f'{table_name}.{csv_extension}')

@@ -1,6 +1,0 @@
-data_sets_url: "https://datasets.imdbws.com"
-dataset_paths:
-  title: "title.basics.tsv.gz"
-  name: "name.basics.tsv.gz"
-  principals: "title.principals.tsv.gz"
-  ratings: "title.ratings.tsv.gz"

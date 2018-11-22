@@ -1,0 +1,10 @@
+data_sets_url: "https://datasets.imdbws.com"
+dataset_file_ext: "gz"
+dataset_paths:
+  title: "title.basics.tsv"
+  name: "name.basics.tsv"
+  principals: "title.principals.tsv"
+  ratings: "title.ratings.tsv"
+dataset_delimiter: "\t"
+default_database_uri: "postgresql+psycopg2://postgres@127.0.0.1:5433/postgres"
+csv_extension: "csv"

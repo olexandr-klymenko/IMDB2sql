@@ -6,7 +6,7 @@ __all__ = ['Title', 'Name', 'Principals']
 
 Base = declarative_base(metadata=MetaData())
 
-NameTitle = Table('NameTitle',
+NameTitle = Table('name_title',
                   Base.metadata,
                   Column('name_id', Integer, ForeignKey('name.id')),
                   Column('title_id', Integer, ForeignKey('title.id'))
