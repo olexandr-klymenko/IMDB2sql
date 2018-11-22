@@ -45,6 +45,7 @@ if __name__ == '__main__':
                                  help='Start parsing not from first table')
     cmd_line_parser.add_argument('--one', help="Parse only one table", action="store_true")
     cmd_line_parser.add_argument('--debug', '-dd', action="store_true")
+    cmd_line_parser.add_argument('--quiet', '-q', action="store_true")
     args = cmd_line_parser.parse_args()
     print(args)
     main(args)

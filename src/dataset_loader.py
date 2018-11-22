@@ -11,6 +11,7 @@ class DatasetLoader:
         self.db_uri = cmd_args.dburi
         self.resume = cmd_args.resume
         self.debug = cmd_args.debug
+        self.quiet = cmd_args.quiet
 
         self.dataset_paths: List[Tuple] = config['dataset_paths'].items()
         if self.resume is not None:
@@ -31,7 +32,8 @@ class DatasetLoader:
         self.metadata.reflect(bind=self.engine)
 
     def _copy_table(self, table_name):
-        print(f'Copying data to {table_name} table ...')
+        if not self.quiet:
+            print(f'Copying data to {table_name} table ...')
         with open(get_csv_filename(self.csv_extension, self.root, table_name), 'r') as csv_file:
             conn = create_engine(self.db_uri, echo=self.debug).raw_connection()
             cursor = conn.cursor()
@@ -48,7 +50,8 @@ class DatasetLoader:
     def clean_up(self):
         tables = self._get_sorted_tables(self.metadata.sorted_tables)
         for table in tables:
-            print(f"Cleaning up table '{table.name}' ...")
+            if not self.quiet:
+                print(f"Cleaning up table '{table.name}' ...")
             self.engine.execute(table.delete())
             if table.name == self.resume:
                 break

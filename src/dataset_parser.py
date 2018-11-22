@@ -21,6 +21,7 @@ class DatasetParser:
         self.errors = defaultdict(list)
         self.indices = defaultdict(set)
         self.debug = cmd_args.debug
+        self.quiet = cmd_args.quiet
         self.dataset_paths = config['dataset_paths'].items()
         self.delimiter = config['dataset_delimiter']
         self.csv_extension = config['csv_extension']
@@ -43,12 +44,13 @@ class DatasetParser:
         with open(output_filename, 'w') as dataset_out:
             writer = csv.writer(dataset_out)
             status_line = f"Parsing '{dataset_path}' into '{output_filename}' ..."
-            print(f'{self._get_progress_line(status_line, 0)} ...')
+            if not self.quiet:
+                print(f'{self._get_progress_line(status_line, 0)} ...')
             for idx, (data_line, progress) in enumerate(dataset_iter):
-                overwrite_upper_line(self._get_progress_line(status_line, progress))
+                overwrite_upper_line(self._get_progress_line(status_line, progress), self.quiet)
                 writer.writerow(data_line)
             overwrite_upper_line(
-                f'{self._get_progress_line(status_line, 100)} done'
+                f'{self._get_progress_line(status_line, 100)} done', self.quiet
             )
 
     @staticmethod

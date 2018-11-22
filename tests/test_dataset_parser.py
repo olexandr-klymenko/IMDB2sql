@@ -36,6 +36,8 @@ class TestDataSetParser(unittest.TestCase):
         cmd_args = mock
         cmd_args.debug = False
         cmd_args.root = DATASET_DIR
+        cmd_args.quiet = True
+
         cls.dataset_parser = DatasetParser(cmd_args, CONFIG)
 
     def setUp(self):
@@ -55,7 +57,5 @@ class TestDataSetParser(unittest.TestCase):
         self.assertDictEqual(actual_dict, EXPECTED_DATA)
         self.assertDictEqual(dict(self.dataset_parser.errors), EXPECTED_ERRORS)
 
-# TODO: Fix tests
-# TODO: Add test case for DatasetLoader
 # TODO: Cover all the rest of cases with different args
 # TODO: Increase dataset size in several times

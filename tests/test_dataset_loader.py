@@ -29,6 +29,8 @@ class TestDataSetLoader(unittest.TestCase):
         cmd_args.root = DATASET_DIR
         cmd_args.resume = None
         cmd_args.one = False
+        cmd_args.quiet = True
+
         cls.dataset_parser = DatasetParser(cmd_args, CONFIG)
         cls.dataset_loader = DatasetLoader(cmd_args, CONFIG)
         cls.dataset_parser.parse_dataset()

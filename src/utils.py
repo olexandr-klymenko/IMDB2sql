@@ -82,15 +82,17 @@ class DataSetsHandler:
 
 # TODO: Implement GraphQL
 
-def overwrite_upper_line(content: str):
+def overwrite_upper_line(content: str, quiet=False):
     """
     Output string content in the current line by overwriting
     :param content: string content
+    :param quiet: bool
     :return:
     """
-    sys.stdout.write(CURSOR_UP_ONE)
-    sys.stdout.write(ERASE_LINE)
-    print(content)
+    if not quiet:
+        sys.stdout.write(CURSOR_UP_ONE)
+        sys.stdout.write(ERASE_LINE)
+        print(content)
 
 
 def get_int(id_: str) -> Union[int, None]:
