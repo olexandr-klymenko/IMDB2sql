@@ -21,6 +21,7 @@ class DatasetParser:
         self.indices = defaultdict(set)
         self.debug = cmd_args.debug
         self.dataset_paths = config['dataset_paths'].items()
+        self.delimiter = config['dataset_delimiter']
         self.csv_extension = config['csv_extension']
 
     def parse_dataset(self):
@@ -132,14 +133,19 @@ class DatasetParser:
             else:
                 self.errors[RATINGS_NAME].append(data)
 
-    @staticmethod
-    def _parse_raw_dataset(file_path):
+    def _parse_raw_dataset(self, file_path):
         size = getsize(file_path)
         read_size = 0
         with open(file_path) as fd:
-            tsv_reader = csv.reader(fd, delimiter='\t')
+            tsv_reader = csv.reader(fd, delimiter=self.delimiter)
             headers = next(tsv_reader)
             for line in tsv_reader:
                 read_size += len(''.join(line)) + len(line)
                 data = dict(zip(headers, line))
                 yield data, (read_size / size) * 100
+
+
+# TODO: Implement writing and reading to gzipped csv files
+# TODO: Implement integration tests or end-to-end test with separate docker-compose.yml and database
+# TODO: Implement fast database cleanup
+# TODO: Implement string fields size validation

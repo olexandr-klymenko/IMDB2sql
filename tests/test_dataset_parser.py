@@ -4,7 +4,6 @@ from typing import List
 from sqlalchemy.orm import sessionmaker
 
 import src.models as models
-from src.constants import DEFAULT_DATABASE_URI
 from src.dataset_parser import DatasetParser
 
 DATASETS_DIR = './datasets'
@@ -13,14 +12,7 @@ DATASETS_DIR = './datasets'
 class TestDataSetParser(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.dataset_parser = DatasetParser(
-            root=DATASETS_DIR,
-            resume=None,
-            dataset_paths=DATASET_PATHS,
-            one=False,
-            dry_run=False
-        )
-        cls.dataset_parser.db_init(DEFAULT_DATABASE_URI)
+        cls.dataset_parser = DatasetParser()
 
     def setUp(self):
         self.dataset_parser.parse_dataset()

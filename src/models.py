@@ -1,10 +1,9 @@
+from sqlalchemy import Column, String, Integer, Float, Boolean, ForeignKey, Table, MetaData
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
-from sqlalchemy import Column, String, Integer, Float, Boolean, ForeignKey, Table, MetaData
-
-__all__ = ['Title', 'Name', 'Principals']
 
 Base = declarative_base(metadata=MetaData())
+
 
 NameTitle = Table('name_title',
                   Base.metadata,
