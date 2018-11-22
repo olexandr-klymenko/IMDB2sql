@@ -2,17 +2,17 @@ import threading
 import unittest
 
 from src.utils import DataSetsHandler
-from tests.utils import TestServer, TEST_HTTP_PORT, TEST_TVS_DATA, TEST_FILENAME, TEST_FILENAME_INVALID
+from tests.utils import FakeHTTPServer, TEST_HTTP_PORT, TEST_TVS_DATA, TEST_FILENAME, TEST_FILENAME_INVALID
 
 
 class TestDownloadAndExtractDataset(unittest.TestCase):
-    server: TestServer = None
+    server: FakeHTTPServer = None
     downloader: DataSetsHandler = None
 
     @classmethod
     def setUpClass(cls):
         cls.downloader = DataSetsHandler([f'http://127.0.0.1:{TEST_HTTP_PORT}/{TEST_FILENAME}'])
-        cls.server = TestServer()
+        cls.server = FakeHTTPServer()
         thread = threading.Thread(target=cls.server.serve_forever)
         thread.start()
 

@@ -2,5 +2,6 @@ PyYAML
 beautifulsoup4
 psutil
 psycopg2-binary
+pytest
 validators
 SQLAlchemy

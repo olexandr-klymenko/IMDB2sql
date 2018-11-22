@@ -15,11 +15,14 @@ NAME_TITLE_NAME = models.NameTitle.name
 
 
 class DatasetParser:
+    root = None
+    debug = False
+
     def __init__(self, cmd_args, config: Dict):
-        self.root = cmd_args.root
+        self.root = self.root or cmd_args.root
         self.errors = defaultdict(list)
         self.indices = defaultdict(set)
-        self.debug = cmd_args.debug
+        self.debug = self.debug or cmd_args.debug
         self.dataset_paths = config['dataset_paths'].items()
         self.delimiter = config['dataset_delimiter']
         self.csv_extension = config['csv_extension']

@@ -3,7 +3,7 @@ import gzip
 import http.server
 import io
 
-__all__ = ['TestServer', 'TEST_HTTP_PORT', 'TEST_FILENAME', 'TEST_TVS_DATA', 'TEST_FILENAME_INVALID']
+__all__ = ['FakeHTTPServer', 'TEST_HTTP_PORT', 'TEST_FILENAME', 'TEST_TVS_DATA', 'TEST_FILENAME_INVALID']
 
 
 TEST_HTTP_PORT = 8333
@@ -51,6 +51,6 @@ def _generate_gzipped_tvs_file_stream():
     return gzip.compress(output.read().encode())
 
 
-class TestServer(http.server.HTTPServer):
+class FakeHTTPServer(http.server.HTTPServer):
     def __init__(self):
         super().__init__(('', TEST_HTTP_PORT), Handler)

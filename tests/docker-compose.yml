@@ -1,0 +1,6 @@
+postgres:
+  container_name: imdb-test
+  restart: always
+  image: postgres:latest
+  ports:
+    - 5434:5432
