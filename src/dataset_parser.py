@@ -7,22 +7,19 @@ from typing import Iterator, Dict
 from src import models
 from src.utils import overwrite_upper_line, get_int, get_null, get_csv_filename
 
-TITLE_NAME = models.Title.__tablename__
-NAME_NAME = models.Name.__tablename__
-PRINCIPALS_NAME = models.Principals.__tablename__
-RATINGS_NAME = models.Ratings.__tablename__
-NAME_TITLE_NAME = models.NameTitle.name
+TITLE = models.Title.__tablename__
+NAME = models.Name.__tablename__
+PRINCIPALS = models.Principals.__tablename__
+RATINGS = models.Ratings.__tablename__
+NAME_TITLE = models.NameTitle.name
 
 
 class DatasetParser:
-    root = None
-    debug = False
-
     def __init__(self, cmd_args, config: Dict):
-        self.root = self.root or cmd_args.root
+        self.root = cmd_args.root
         self.errors = defaultdict(list)
         self.indices = defaultdict(set)
-        self.debug = self.debug or cmd_args.debug
+        self.debug = cmd_args.debug
         self.dataset_paths = config['dataset_paths'].items()
         self.delimiter = config['dataset_delimiter']
         self.csv_extension = config['csv_extension']
@@ -73,13 +70,13 @@ class DatasetParser:
                     data['genres'],
                 )
             except KeyError:
-                self.errors[TITLE_NAME].append(data)
+                self.errors[TITLE].append(data)
             else:
-                self.indices[TITLE_NAME].add(title_id)
+                self.indices[TITLE].add(title_id)
                 yield data_line, progress
 
     def _parse_name(self, dataset_path):
-        with open(join(self.root, f'{NAME_TITLE_NAME}.{self.csv_extension}'), 'w') as dataset_out:
+        with open(join(self.root, f'{NAME_TITLE}.{self.csv_extension}'), 'w') as dataset_out:
             writer = csv.writer(dataset_out)
             for data, progress in self._parse_raw_dataset(dataset_path):
                 try:
@@ -92,23 +89,23 @@ class DatasetParser:
                         data['primaryProfession']
                     )
                 except KeyError:
-                    self.errors[NAME_NAME].append(data)
+                    self.errors[NAME].append(data)
                 else:
-                    self.indices[NAME_NAME].add(name_id)
+                    self.indices[NAME].add(name_id)
                     yield data_line, progress
                     writer.writerows(self._get_name_title_data(data, name_id))
 
     def _get_name_title_data(self, data, name_id):
         titles = [get_int(el) for el in data['knownForTitles'].split(',') if get_int(el)]
         for title_id in titles:
-            if title_id in self.indices[TITLE_NAME]:
+            if title_id in self.indices[TITLE]:
                 data_line = (name_id, title_id)
                 yield data_line
 
     def _parse_principals(self, dataset_path):
         for idx, (data, progress) in enumerate(self._parse_raw_dataset(dataset_path)):
             title_id, name_id = get_int(data['tconst']), get_int(data['nconst'])
-            if title_id in self.indices[TITLE_NAME] and name_id in self.indices[NAME_NAME]:
+            if title_id in self.indices[TITLE] and name_id in self.indices[NAME]:
                 data_line = (
                     idx,
                     data['ordering'],
@@ -120,12 +117,12 @@ class DatasetParser:
                 )
                 yield data_line, progress
             else:
-                self.errors[PRINCIPALS_NAME].append(data)
+                self.errors[PRINCIPALS].append(data)
 
     def _parse_ratings(self, dataset_path):
         for idx, (data, progress) in enumerate(self._parse_raw_dataset(dataset_path)):
             title_id = get_int(data['tconst'])
-            if title_id in self.indices[TITLE_NAME]:
+            if title_id in self.indices[TITLE]:
                 data_line = (
                     idx,
                     data['averageRating'],
@@ -134,7 +131,7 @@ class DatasetParser:
                 )
                 yield data_line, progress
             else:
-                self.errors[RATINGS_NAME].append(data)
+                self.errors[RATINGS].append(data)
 
     def _parse_raw_dataset(self, file_path):
         size = getsize(file_path)
