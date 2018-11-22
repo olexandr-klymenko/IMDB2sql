@@ -1,5 +1,6 @@
-import csv
 from collections import defaultdict
+
+import csv
 from os.path import join, getsize
 from pprint import pprint
 from typing import Iterator, Dict
@@ -144,8 +145,6 @@ class DatasetParser:
                 data = dict(zip(headers, line))
                 yield data, (read_size / size) * 100
 
-
 # TODO: Implement writing and reading to gzipped csv files
-# TODO: Implement integration tests or end-to-end test with separate docker-compose.yml and database
 # TODO: Implement fast database cleanup
 # TODO: Implement string fields size validation

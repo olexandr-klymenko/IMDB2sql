@@ -5,7 +5,6 @@ import io
 
 __all__ = ['FakeHTTPServer', 'TEST_HTTP_PORT', 'TEST_FILENAME', 'TEST_TVS_DATA', 'TEST_FILENAME_INVALID']
 
-
 TEST_HTTP_PORT = 8333
 DELIMITER = '\t'
 TEST_FILENAME = 'valid.test.dataset.tsv.gz'

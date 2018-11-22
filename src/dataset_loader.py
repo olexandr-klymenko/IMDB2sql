@@ -1,6 +1,5 @@
-from typing import Dict, List, Tuple
-
 from sqlalchemy import create_engine
+from typing import Dict, List, Tuple
 
 import src.models as models
 from src.utils import get_csv_filename

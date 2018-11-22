@@ -1,7 +1,6 @@
 import unittest
-
-import yaml
 import validators
+import yaml
 
 from src.utils import get_links
 
