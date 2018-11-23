@@ -1,6 +1,5 @@
 import unittest
-from os import getcwd
-from os.path import join, isfile, pardir
+from os.path import join
 from pathlib import Path
 from typing import List
 from unittest import mock
@@ -12,7 +11,6 @@ from src.dataset_loader import DatasetLoader
 from src.dataset_parser import DatasetParser
 from src.utils import get_config
 from tests.utils import get_root_dir, CONFIG_REL_PATH, DATASET_REL_PATH
-
 
 CONFIG = get_config(join(get_root_dir(), CONFIG_REL_PATH))
 DATASET_DIR = join(get_root_dir(), DATASET_REL_PATH)

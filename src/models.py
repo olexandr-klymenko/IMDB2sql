@@ -11,6 +11,18 @@ NameTitle = Table('name_title',
                   Column('title_id', Integer, ForeignKey('title.id'))
                   )
 
+ProfessionName = Table('profession_name',
+                       Base.metadata,
+                       Column('profession_id', Integer, ForeignKey('profession.id')),
+                       Column('name_id', Integer, ForeignKey('name.id'))
+                       )
+
+GenreTitle = Table('genre_title',
+                   Base.metadata,
+                   Column('genre_id', Integer, ForeignKey('genre.id')),
+                   Column('title_id', Integer, ForeignKey('title.id')),
+                   )
+
 
 class Title(Base):
     __tablename__ = 'title'
@@ -23,9 +35,9 @@ class Title(Base):
     start_year = Column(Integer)
     end_year = Column(Integer, nullable=True)
     runtime_minutes = Column(Integer)
-    genres = Column(String(40))
 
     names = relationship("Name", secondary=NameTitle, backref='title')
+    genres = relationship("Genre", secondary=GenreTitle, backref='title')
 
 
 class Name(Base):
@@ -35,9 +47,9 @@ class Name(Base):
     primary_name = Column(String(120))
     birth_year = Column(Integer)
     death_year = Column(Integer, nullable=True)
-    primary_profession = Column(String(70))
 
     titles = relationship("Title", secondary=NameTitle, backref='name')
+    professions = relationship("Profession", secondary=ProfessionName, backref='name')
 
 
 class Principal(Base):
@@ -65,3 +77,21 @@ class Rating(Base):
 
     title_id = Column(Integer, ForeignKey('title.id'))
     title = relationship("Title", uselist=False)
+
+
+class Profession(Base):
+    __tablename__ = 'profession'
+
+    id = Column(Integer, primary_key=True)
+    profession = Column(String(50))
+
+    names = relationship("Name", secondary=ProfessionName, backref='profession')
+
+
+class Genre(Base):
+    __tablename__ = 'genre'
+
+    id = Column(Integer, primary_key=True)
+    genre = Column(String(50))
+
+    titles = relationship("Title", secondary=GenreTitle, backref='genre')

@@ -31,21 +31,15 @@ class DatasetLoader:
         self.metadata.create_all(bind=self.engine)
         self.metadata.reflect(bind=self.engine)
 
-    def _copy_table(self, table_name):
-        if not self.quiet:
-            print(f'Copying data to {table_name} table ...')
-        with open(get_csv_filename(self.csv_extension, self.root, table_name), 'r') as csv_file:
-            conn = create_engine(self.db_uri, echo=self.debug).raw_connection()
-            cursor = conn.cursor()
-            cmd = f'COPY {table_name} FROM STDIN WITH (FORMAT CSV, HEADER FALSE)'
-            cursor.copy_expert(cmd, csv_file)
-            conn.commit()
-
     def load_dataset(self):
         self.clean_up()
         for table_name, _ in self.dataset_paths:
             self._copy_table(table_name)
         self._copy_table(models.NameTitle.name)
+        self._copy_table(models.Profession.__tablename__)
+        self._copy_table(models.ProfessionName.name)
+        self._copy_table(models.Genre.__tablename__)
+        self._copy_table(models.GenreTitle.name)
 
     def clean_up(self):
         tables = self._get_sorted_tables(self.metadata.sorted_tables)
@@ -55,6 +49,16 @@ class DatasetLoader:
             self.engine.execute(table.delete())
             if table.name == self.resume:
                 break
+
+    def _copy_table(self, table_name):
+        if not self.quiet:
+            print(f'Copying data to {table_name} table ...')
+        with open(get_csv_filename(self.csv_extension, self.root, table_name), 'r') as csv_file:
+            conn = create_engine(self.db_uri, echo=self.debug).raw_connection()
+            cursor = conn.cursor()
+            cmd = f'COPY {table_name} FROM STDIN WITH (FORMAT CSV, HEADER FALSE)'
+            cursor.copy_expert(cmd, csv_file)
+            conn.commit()
 
     def _get_sorted_tables(self, tables):
         sorted_tables = []
