@@ -2,8 +2,11 @@ import csv
 import gzip
 import http.server
 import io
+from os import getcwd
+from os.path import join, pardir, isfile
 
-__all__ = ['FakeHTTPServer', 'TEST_HTTP_PORT', 'TEST_FILENAME', 'TEST_TVS_DATA', 'TEST_FILENAME_INVALID']
+__all__ = ['FakeHTTPServer', 'TEST_HTTP_PORT', 'TEST_FILENAME', 'TEST_TVS_DATA', 'TEST_FILENAME_INVALID',
+           'CONFIG_REL_PATH', 'DATASET_REL_PATH', 'get_root_dir']
 
 TEST_HTTP_PORT = 8333
 DELIMITER = '\t'
@@ -21,6 +24,8 @@ nm0000007	Humphrey Bogart	1899	1957	actor,soundtrack,producer	tt0037382,tt003387
 nm0000008	Marlon Brando	1924	2004	actor,soundtrack,director	tt0047296,tt0068646,tt0070849,tt0078788
 nm0000009	Richard Burton	1925	1984	actor,producer,soundtrack	tt0059749,tt0087803,tt0061184,tt0057877
 """.strip('\n')
+CONFIG_REL_PATH = join('config', 'config.yml')
+DATASET_REL_PATH = join('tests', 'datasets')
 
 
 class Handler(http.server.SimpleHTTPRequestHandler):
@@ -53,3 +58,9 @@ def _generate_gzipped_tvs_file_stream():
 class FakeHTTPServer(http.server.HTTPServer):
     def __init__(self):
         super().__init__(('', TEST_HTTP_PORT), Handler)
+
+
+def get_root_dir():
+    if isfile(join(getcwd(), CONFIG_REL_PATH)):
+        return getcwd()
+    return join(getcwd(), pardir)

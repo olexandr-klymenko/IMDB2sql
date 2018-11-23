@@ -1,21 +1,15 @@
 import csv
 import unittest
-from os import getcwd
-from os.path import join, isfile, abspath, pardir
+from os.path import join
 from pathlib import Path
 from unittest import mock
 
 from src.dataset_parser import DatasetParser
 from src.utils import get_config
+from tests.utils import get_root_dir, CONFIG_REL_PATH, DATASET_REL_PATH
 
-DATASET_DIR = join(getcwd(), 'tests', 'datasets')
-CONFIG_PATH = join(getcwd(), 'config', 'config.yml')
-if not isfile(CONFIG_PATH):
-    CONFIG_PATH = abspath(abspath(join(getcwd(), pardir, 'config', 'config.yml')))
-    DATASET_DIR = abspath(join(getcwd(), pardir, 'tests', 'datasets'))
-
-CONFIG = get_config(CONFIG_PATH)
-
+CONFIG = get_config(join(get_root_dir(), CONFIG_REL_PATH))
+DATASET_DIR = join(get_root_dir(), DATASET_REL_PATH)
 EXPECTED_DATA = {
     'principals.csv': 10,
     'ratings.csv': 8,
