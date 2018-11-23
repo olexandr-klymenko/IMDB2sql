@@ -12,9 +12,13 @@ CONFIG = get_config(join(get_root_dir(), CONFIG_REL_PATH))
 DATASET_DIR = join(get_root_dir(), DATASET_REL_PATH)
 EXPECTED_DATA = {
     'principal.csv': 10,
+    'profession.csv': 6,
+    'profession_name.csv': 25,
     'rating.csv': 8,
     'title.csv': 8,
     'name_title.csv': 27,
+    'genre.csv': 6,
+    'genre_title.csv': 15,
     'name.csv': 9
 }
 

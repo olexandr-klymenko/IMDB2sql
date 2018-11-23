@@ -79,13 +79,14 @@ class DatasetParser:
                     bool(data['isAdult']),
                     get_null(data['startYear']),
                     get_null(data['endYear']),
-                    get_null(data['runtimeMinutes']),
-                    data['genres'],
+                    get_null(data['runtimeMinutes'])
                 )
+                genres_from_dataset = data['genres']
             except KeyError:
                 self.errors[TITLE].append(data)
             else:
                 self.indices[TITLE].add(title_id)
+                self._update_genres(genres_from_dataset, title_id)
                 yield data_line, progress
 
     def _update_genres(self, genres_from_dataset: str, title_id: int):

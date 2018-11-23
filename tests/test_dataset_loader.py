@@ -42,7 +42,7 @@ class TestDataSetLoader(unittest.TestCase):
 
     def test_names(self):
         name_model: models.Name = self.session.query(models.Name).filter(models.Name.id == 9).all()[0]
-        self.assertEqual(name_model.primary_profession, 'actor,producer,soundtrack')
+        self.assertSetEqual(set([el.profession for el in name_model.professions]), {'actor', 'producer', 'soundtrack'})
         self.assertEqual(
             set([title.id for title in name_model.titles]), {1, 2, 3, 4}
         )
@@ -60,7 +60,7 @@ class TestDataSetLoader(unittest.TestCase):
         ).filter(models.Principal.title_id == 1).all()
         self.assertEqual(len(query), 4)
         for principal in query:
-            self.assertIn(principal.category, principal.name.primary_profession.split(','))
+            self.assertIn(principal.category, [el.profession for el in principal.name.professions])
 
     def test_ratings(self):
         query: List[models.Rating] = self.session.query(

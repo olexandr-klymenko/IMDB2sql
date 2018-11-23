@@ -68,4 +68,6 @@ class DatasetLoader:
                     sorted_tables.append(table)
                     break
         sorted_tables.insert(0, models.NameTitle)
+        sorted_tables.insert(1, models.ProfessionName)
+        sorted_tables.insert(2, models.GenreTitle)
         return sorted_tables
