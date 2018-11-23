@@ -13,8 +13,8 @@ class TestGetConfig(unittest.TestCase):
         dataset_paths:
             title: "name.basics.tsv.gz"
             name: "name.basics.tsv.gz"
-            principals: "title.principals.tsv.gz"
-            ratings: "title.ratings.tsv.gz"
+            principal: "title.principals.tsv.gz"
+            rating: "title.ratings.tsv.gz"
         """
         _, self.config_path = tempfile.mkstemp()
         with open(self.config_path, 'w') as cfg:

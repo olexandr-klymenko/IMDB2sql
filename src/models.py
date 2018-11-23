@@ -40,8 +40,8 @@ class Name(Base):
     titles = relationship("Title", secondary=NameTitle, backref='name')
 
 
-class Principals(Base):
-    __tablename__ = 'principals'
+class Principal(Base):
+    __tablename__ = 'principal'
 
     id = Column(Integer, primary_key=True)
     ordering = Column(Integer)
@@ -56,8 +56,8 @@ class Principals(Base):
     name = relationship("Name", uselist=False)
 
 
-class Ratings(Base):
-    __tablename__ = 'ratings'
+class Rating(Base):
+    __tablename__ = 'rating'
 
     id = Column(Integer, primary_key=True)
     average_rating = Column(Float)

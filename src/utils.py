@@ -1,18 +1,18 @@
-import sys
-from collections import namedtuple
-
 import gzip
 import os
-import psutil
 import re
+import sys
 import tempfile
 import urllib.parse
 import urllib.request
-import yaml
-from bs4 import BeautifulSoup
+from collections import namedtuple
 from multiprocessing import Pool
 from os.path import join, exists
 from typing import List, Dict, Union
+
+import psutil
+import yaml
+from bs4 import BeautifulSoup
 
 DATA_SET_FILENAME_PATTERN = re.compile('^/(.*).gz')
 CURSOR_UP_ONE = '\x1b[1A'
@@ -30,7 +30,8 @@ def get_links(dataset_index_page_content: str, config: Dict) -> List:
 
 
 def _filter_links(link, config) -> bool:
-    return urllib.parse.urlparse(link.get('href')).path.strip("/") in config['dataset_paths'].values()
+    dataset_files = [f"{el}.{config['dataset_file_ext']}" for el in config['dataset_paths'].values()]
+    return urllib.parse.urlparse(link.get('href')).path.strip("/") in dataset_files
 
 
 DataSet = namedtuple('DataSet', ['url', 'gzipped', 'extracted'])

@@ -11,8 +11,8 @@ from tests.utils import get_root_dir, CONFIG_REL_PATH, DATASET_REL_PATH
 CONFIG = get_config(join(get_root_dir(), CONFIG_REL_PATH))
 DATASET_DIR = join(get_root_dir(), DATASET_REL_PATH)
 EXPECTED_DATA = {
-    'principals.csv': 10,
-    'ratings.csv': 8,
+    'principal.csv': 10,
+    'rating.csv': 8,
     'title.csv': 8,
     'name_title.csv': 27,
     'name.csv': 9
@@ -21,7 +21,7 @@ EXPECTED_DATA = {
 EXPECTED_ERRORS = {'title': [
     {'tconst': 'tt0000009', 'titleType': 'movie', 'primaryTitle': 'Miss Jerry', 'originalTitle': 'Miss Jerry',
      'isAdult': '0', 'startYear': '1894', 'endYear': '\\N', 'runtimeMinutes': 'Romance'}],
-    'ratings': [{'tconst': 'tt0000009', 'averageRating': '5.5', 'numVotes': '67'}]}
+    'rating': [{'tconst': 'tt0000009', 'averageRating': '5.5', 'numVotes': '67'}]}
 
 
 class TestDataSetParser(unittest.TestCase):

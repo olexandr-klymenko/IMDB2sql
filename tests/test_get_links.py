@@ -1,8 +1,12 @@
 import unittest
-import validators
-import yaml
+from os.path import join
 
-from src.utils import get_links
+import validators
+
+from src.utils import get_links, get_config
+from tests.utils import get_root_dir, CONFIG_REL_PATH
+
+CONFIG = get_config(join(get_root_dir(), CONFIG_REL_PATH))
 
 
 class TestGetLinks(unittest.TestCase):
@@ -26,14 +30,7 @@ Documentation for these data files can be found on <a href=http://www.imdb.com/i
   </body>
 </html>
         """
-        self.config = yaml.load("""
-data_sets_url: "https://datasets.imdbws.com"
-dataset_paths:
-    title: "name.basics.tsv.gz"
-    name: "name.basics.tsv.gz"
-    principals: "title.principals.tsv.gz"
-    ratings: "title.ratings.tsv.gz"
-""")
+        self.config = CONFIG
 
     def test_get_links(self):
         links = get_links(self.dataset_index_page_content, self.config)

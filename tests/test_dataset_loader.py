@@ -57,17 +57,17 @@ class TestDataSetLoader(unittest.TestCase):
         )
 
     def test_principals(self):
-        query: List[models.Principals] = self.session.query(
-            models.Principals
-        ).filter(models.Principals.title_id == 1).all()
+        query: List[models.Principal] = self.session.query(
+            models.Principal
+        ).filter(models.Principal.title_id == 1).all()
         self.assertEqual(len(query), 4)
         for principal in query:
             self.assertIn(principal.category, principal.name.primary_profession.split(','))
 
     def test_ratings(self):
-        query: List[models.Ratings] = self.session.query(
-            models.Ratings
-        ).filter(models.Ratings.title_id == 1).all()
+        query: List[models.Rating] = self.session.query(
+            models.Rating
+        ).filter(models.Rating.title_id == 1).all()
         self.assertEqual(len(query), 1)
         self.assertEqual(query[0].average_rating, 5.8)
         self.assertEqual(query[0].num_votes, 1396)

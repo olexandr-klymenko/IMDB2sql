@@ -10,8 +10,8 @@ from src.utils import overwrite_upper_line, get_int, get_null, get_csv_filename
 
 TITLE = models.Title.__tablename__
 NAME = models.Name.__tablename__
-PRINCIPALS = models.Principals.__tablename__
-RATINGS = models.Ratings.__tablename__
+PRINCIPALS = models.Principal.__tablename__
+RATINGS = models.Rating.__tablename__
 NAME_TITLE = models.NameTitle.name
 
 
@@ -105,7 +105,7 @@ class DatasetParser:
                 data_line = (name_id, title_id)
                 yield data_line
 
-    def _parse_principals(self, dataset_path):
+    def _parse_principal(self, dataset_path):
         for idx, (data, progress) in enumerate(self._parse_raw_dataset(dataset_path)):
             title_id, name_id = get_int(data['tconst']), get_int(data['nconst'])
             if title_id in self.indices[TITLE] and name_id in self.indices[NAME]:
@@ -122,7 +122,7 @@ class DatasetParser:
             else:
                 self.errors[PRINCIPALS].append(data)
 
-    def _parse_ratings(self, dataset_path):
+    def _parse_rating(self, dataset_path):
         for idx, (data, progress) in enumerate(self._parse_raw_dataset(dataset_path)):
             title_id = get_int(data['tconst'])
             if title_id in self.indices[TITLE]:
