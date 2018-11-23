@@ -1,19 +1,18 @@
 import unittest
 from os.path import join
 from pathlib import Path
+from sqlalchemy.orm import sessionmaker
 from typing import List
 from unittest import mock
-
-from sqlalchemy.orm import sessionmaker
 
 from src import models
 from src.dataset_loader import DatasetLoader
 from src.dataset_parser import DatasetParser
 from src.utils import get_config
-from tests.utils import get_root_dir, CONFIG_REL_PATH, DATASET_REL_PATH
+from tests.utils import get_root_dir, CONFIG_REL_PATH, DATASETS_REL_PATH
 
 CONFIG = get_config(join(get_root_dir(), CONFIG_REL_PATH))
-DATASET_DIR = join(get_root_dir(), DATASET_REL_PATH)
+DATASET_DIR = join(get_root_dir(), DATASETS_REL_PATH)
 
 
 class TestDataSetLoader(unittest.TestCase):
@@ -43,9 +42,7 @@ class TestDataSetLoader(unittest.TestCase):
     def test_names(self):
         name_model: models.Name = self.session.query(models.Name).filter(models.Name.id == 9).all()[0]
         self.assertSetEqual(set([el.profession for el in name_model.professions]), {'actor', 'producer', 'soundtrack'})
-        self.assertEqual(
-            set([title.id for title in name_model.titles]), {1, 2, 3, 4}
-        )
+        self.assertSetEqual(set([title.id for title in name_model.titles]), {1, 2, 3, 4})
 
     def test_titles(self):
         title_model: models.Title = self.session.query(models.Title).filter(models.Title.id == 2).all()[0]
@@ -53,6 +50,7 @@ class TestDataSetLoader(unittest.TestCase):
         self.assertEqual(
             set(name.id for name in title_model.names), {1, 6, 9}
         )
+        self.assertSetEqual(set(genre.genre for genre in title_model.genres), {'Short', 'Animation'})
 
     def test_principals(self):
         query: List[models.Principal] = self.session.query(

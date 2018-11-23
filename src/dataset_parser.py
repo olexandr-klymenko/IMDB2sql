@@ -1,8 +1,8 @@
 from collections import defaultdict
 
 import csv
+import json
 from os.path import join, getsize
-from pprint import pprint
 from typing import Iterator, Dict
 
 from src import models
@@ -39,12 +39,11 @@ class DatasetParser:
             dataset_iter = parse_handler(join(self.root, dataset_path))
             self._write_normalized_dataset(dataset_iter, dataset_path, table_name)
 
-        self._write_profession_name()
-        self._write_genre_title()
+        self._write_extra_data(PROFESSION, NAME_PROFESSION, self.profession_names)
+        self._write_extra_data(GENRE, GENRE_TITLE, self.genre_titles)
 
-        if self.debug:
-            print('Invalid dataset items:')
-            pprint(dict(self.errors))
+        with open('errors.log', 'w') as ef:
+            ef.write(json.dumps(self.errors))
 
     def _get_parse_handler(self, table_name):
         return getattr(self, f'_parse_{table_name}')
@@ -81,12 +80,13 @@ class DatasetParser:
                     get_null(data['endYear']),
                     get_null(data['runtimeMinutes'])
                 )
-                genres_from_dataset = data['genres']
+                genres_from_dataset = get_null(data['genres'])
             except KeyError:
                 self.errors[TITLE].append(data)
             else:
                 self.indices[TITLE].add(title_id)
-                self._update_genres(genres_from_dataset, title_id)
+                if genres_from_dataset is not None:
+                    self._update_genres(genres_from_dataset, title_id)
                 yield data_line, progress
 
     def _update_genres(self, genres_from_dataset: str, title_id: int):
@@ -105,11 +105,13 @@ class DatasetParser:
                         get_null(data['birthYear']),
                         get_null(data['deathYear']),
                     )
+                    profession_from_dataset = get_null(data['primaryProfession'])
                 except KeyError:
                     self.errors[NAME].append(data)
                 else:
                     self.indices[NAME].add(name_id)
-                    self._update_professions(data['primaryProfession'], name_id)
+                    if profession_from_dataset is not None:
+                        self._update_professions(profession_from_dataset, name_id)
                     yield data_line, progress
                     writer.writerows(self._get_name_title_data(data, name_id))
 
@@ -166,34 +168,19 @@ class DatasetParser:
                 data = dict(zip(headers, line))
                 yield data, (read_size / size) * 100
 
-    def _write_profession_name(self):
-        profession_filename = get_csv_filename(self.csv_extension, self.root, PROFESSION)
-        profession_name_filename = get_csv_filename(self.csv_extension, self.root, NAME_PROFESSION)
+    def _write_extra_data(self, table: str, mapper: str, extra_data: Dict):
+        profession_filename = get_csv_filename(self.csv_extension, self.root, table)
+        profession_name_filename = get_csv_filename(self.csv_extension, self.root, mapper)
 
-        with open(profession_filename, 'w') as p_f:
+        with open(profession_filename, 'w') as table_file:
             print(f"Writing {profession_filename} and {profession_name_filename} files ...")
-            p_writer = csv.writer(p_f)
-            with open(profession_name_filename, 'w') as p_n_f:
-                p_n_writer = csv.writer(p_n_f)
-                for idx, (profession, name_ids) in enumerate(self.profession_names.items()):
-                    p_writer.writerow([idx, profession])
-                    for name_id in name_ids:
-                        p_n_writer.writerow([idx, name_id])
-
-    def _write_genre_title(self):
-        genre_filename = get_csv_filename(self.csv_extension, self.root, GENRE)
-        genre_title_filename = get_csv_filename(self.csv_extension, self.root, GENRE_TITLE)
-
-        with open(genre_filename, 'w') as g_f:
-            print(f"Writing {genre_filename} and {genre_title_filename} files ...")
-            g_writer = csv.writer(g_f)
-            with open(genre_title_filename, 'w') as g_t_f:
-                g_t_writer = csv.writer(g_t_f)
-                for idx, (genre, title_ids) in enumerate(self.genre_titles.items()):
-                    g_writer.writerow([idx, genre])
-                    for title_id in title_ids:
-                        g_t_writer.writerow([idx, title_id])
-
+            table_writer = csv.writer(table_file)
+            with open(profession_name_filename, 'w') as mapper_file:
+                mapper_writer = csv.writer(mapper_file)
+                for idx, (field, table_ids) in enumerate(extra_data.items()):
+                    table_writer.writerow([idx, field])
+                    for table_id in table_ids:
+                        mapper_writer.writerow([idx, table_id])
 
 # TODO: Implement writing and reading to gzipped csv files
 # TODO: Implement fast database cleanup

@@ -52,7 +52,7 @@ class DatasetLoader:
 
     def _copy_table(self, table_name):
         if not self.quiet:
-            print(f'Copying data to {table_name} table ...')
+            print(f"Copying data to '{table_name}' table ...")
         with open(get_csv_filename(self.csv_extension, self.root, table_name), 'r') as csv_file:
             conn = create_engine(self.db_uri, echo=self.debug).raw_connection()
             cursor = conn.cursor()
