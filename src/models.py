@@ -4,7 +4,6 @@ from sqlalchemy.orm import relationship
 
 Base = declarative_base(metadata=MetaData())
 
-
 NameTitle = Table('name_title',
                   Base.metadata,
                   Column('name_id', Integer, ForeignKey('name.id')),
@@ -56,10 +55,7 @@ class Principal(Base):
     __tablename__ = 'principal'
 
     id = Column(Integer, primary_key=True)
-    ordering = Column(Integer)
-    category = Column(String(20))
-    job = Column(String(300))
-    characters = Column(String(500))
+    job = Column(String(20))
 
     title_id = Column(Integer, ForeignKey('title.id'))
     title = relationship("Title", uselist=False)
@@ -83,7 +79,7 @@ class Profession(Base):
     __tablename__ = 'profession'
 
     id = Column(Integer, primary_key=True)
-    profession = Column(String(50))
+    profession = Column(String(50), nullable=False)
 
     names = relationship("Name", secondary=ProfessionName, backref='profession')
 
@@ -92,6 +88,6 @@ class Genre(Base):
     __tablename__ = 'genre'
 
     id = Column(Integer, primary_key=True)
-    genre = Column(String(50))
+    genre = Column(String(50), nullable=False)
 
     titles = relationship("Title", secondary=GenreTitle, backref='genre')

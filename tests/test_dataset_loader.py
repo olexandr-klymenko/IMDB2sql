@@ -58,7 +58,7 @@ class TestDataSetLoader(unittest.TestCase):
         ).filter(models.Principal.title_id == 1).all()
         self.assertEqual(len(query), 4)
         for principal in query:
-            self.assertIn(principal.category, [el.profession for el in principal.name.professions])
+            self.assertIn(principal.job, [el.profession for el in principal.name.professions])
 
     def test_ratings(self):
         query: List[models.Rating] = self.session.query(

@@ -1,7 +1,7 @@
 from collections import defaultdict
 
+import pprint
 import csv
-import json
 from os.path import join, getsize
 from typing import Iterator, Dict
 
@@ -43,7 +43,7 @@ class DatasetParser:
         self._write_extra_data(GENRE, GENRE_TITLE, self.genre_titles)
 
         with open('errors.log', 'w') as ef:
-            ef.write(json.dumps(self.errors))
+            pprint.pprint(dict(self.errors), ef)
 
     def _get_parse_handler(self, table_name):
         return getattr(self, f'_parse_{table_name}')
@@ -132,10 +132,7 @@ class DatasetParser:
             if title_id in self.indices[TITLE] and name_id in self.indices[NAME]:
                 data_line = (
                     idx,
-                    data['ordering'],
                     data['category'],
-                    get_null(data['job']),
-                    get_null(data['characters']),
                     title_id,
                     name_id,
                 )
@@ -169,13 +166,13 @@ class DatasetParser:
                 yield data, (read_size / size) * 100
 
     def _write_extra_data(self, table: str, mapper: str, extra_data: Dict):
-        profession_filename = get_csv_filename(self.csv_extension, self.root, table)
-        profession_name_filename = get_csv_filename(self.csv_extension, self.root, mapper)
+        table_filename = get_csv_filename(self.csv_extension, self.root, table)
+        mapper_filename = get_csv_filename(self.csv_extension, self.root, mapper)
 
-        with open(profession_filename, 'w') as table_file:
-            print(f"Writing {profession_filename} and {profession_name_filename} files ...")
+        with open(table_filename, 'w') as table_file:
+            print(f"Dumping to {table_filename} and {mapper_filename} files ...")
             table_writer = csv.writer(table_file)
-            with open(profession_name_filename, 'w') as mapper_file:
+            with open(mapper_filename, 'w') as mapper_file:
                 mapper_writer = csv.writer(mapper_file)
                 for idx, (field, table_ids) in enumerate(extra_data.items()):
                     table_writer.writerow([idx, field])
