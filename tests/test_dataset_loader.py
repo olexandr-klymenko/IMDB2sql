@@ -46,7 +46,7 @@ class TestDataSetLoader(unittest.TestCase):
 
     def test_titles(self):
         title_model: models.Title = self.session.query(models.Title).filter(models.Title.id == 2).all()[0]
-        self.assertEqual(title_model.original_title, 'Le clown et ses chiens')
+        self.assertEqual(title_model.primary_title, 'Le clown et ses chiens')
         self.assertEqual(
             set(name.id for name in title_model.names), {1, 6, 9}
         )

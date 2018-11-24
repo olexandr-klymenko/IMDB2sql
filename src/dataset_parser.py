@@ -74,7 +74,6 @@ class DatasetParser:
                     title_id,
                     data['titleType'],
                     data['primaryTitle'],
-                    data['originalTitle'],
                     bool(data['isAdult']),
                     get_null(data['startYear']),
                     get_null(data['endYear']),

@@ -29,7 +29,6 @@ class Title(Base):
     id = Column(Integer, primary_key=True)
     title_type = Column(String(20))
     primary_title = Column(String(450))
-    original_title = Column(String(450))
     is_adult = Column(Boolean)
     start_year = Column(Integer)
     end_year = Column(Integer, nullable=True)
