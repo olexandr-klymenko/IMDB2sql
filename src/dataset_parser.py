@@ -179,5 +179,4 @@ class DatasetParser:
                         mapper_writer.writerow([idx, table_id])
 
 # TODO: Implement writing and reading to gzipped csv files
-# TODO: Implement fast database cleanup
 # TODO: Implement string fields size validation
