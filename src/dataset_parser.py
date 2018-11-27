@@ -8,14 +8,14 @@ from typing import Iterator, Dict
 from src import models
 from src.utils import overwrite_upper_line, get_int, get_null, get_csv_filename
 
-TITLE = models.Title.__tablename__
-NAME = models.Name.__tablename__
-PRINCIPAL = models.Principal.__tablename__
-RATING = models.Rating.__tablename__
+TITLE = models.TitleModel.__tablename__
+NAME = models.NameModel.__tablename__
+PRINCIPAL = models.PrincipalModel.__tablename__
+RATING = models.RatingModel.__tablename__
 NAME_TITLE = models.NameTitle.name
-PROFESSION = models.Profession.__tablename__
+PROFESSION = models.ProfessionModel.__tablename__
 NAME_PROFESSION = models.ProfessionName.name
-GENRE = models.Genre.__tablename__
+GENRE = models.GenreModel.__tablename__
 GENRE_TITLE = models.GenreTitle.name
 
 

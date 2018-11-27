@@ -40,12 +40,12 @@ class TestDataSetLoader(unittest.TestCase):
         cls.dataset_loader.clean_up()
 
     def test_names(self):
-        name_model: models.Name = self.session.query(models.Name).filter(models.Name.id == 9).all()[0]
+        name_model: models.NameModel = self.session.query(models.NameModel).filter(models.NameModel.id == 9).all()[0]
         self.assertSetEqual(set([el.profession for el in name_model.professions]), {'actor', 'producer', 'soundtrack'})
         self.assertSetEqual(set([title.id for title in name_model.titles]), {1, 2, 3, 4})
 
     def test_titles(self):
-        title_model: models.Title = self.session.query(models.Title).filter(models.Title.id == 2).all()[0]
+        title_model: models.TitleModel = self.session.query(models.TitleModel).filter(models.TitleModel.id == 2).all()[0]
         self.assertEqual(title_model.primary_title, 'Le clown et ses chiens')
         self.assertEqual(
             set(name.id for name in title_model.names), {1, 6, 9}
@@ -53,17 +53,17 @@ class TestDataSetLoader(unittest.TestCase):
         self.assertSetEqual(set(genre.genre for genre in title_model.genres), {'Short', 'Animation'})
 
     def test_principals(self):
-        query: List[models.Principal] = self.session.query(
-            models.Principal
-        ).filter(models.Principal.title_id == 1).all()
+        query: List[models.PrincipalModel] = self.session.query(
+            models.PrincipalModel
+        ).filter(models.PrincipalModel.title_id == 1).all()
         self.assertEqual(len(query), 4)
         for principal in query:
             self.assertIn(principal.job, [el.profession for el in principal.name.professions])
 
     def test_ratings(self):
-        query: List[models.Rating] = self.session.query(
-            models.Rating
-        ).filter(models.Rating.title_id == 1).all()
+        query: List[models.RatingModel] = self.session.query(
+            models.RatingModel
+        ).filter(models.RatingModel.title_id == 1).all()
         self.assertEqual(len(query), 1)
         self.assertEqual(query[0].average_rating, 5.8)
         self.assertEqual(query[0].num_votes, 1396)

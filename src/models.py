@@ -23,7 +23,7 @@ GenreTitle = Table('genre_title',
                    )
 
 
-class Title(Base):
+class TitleModel(Base):
     __tablename__ = 'title'
 
     id = Column(Integer, primary_key=True)
@@ -34,11 +34,11 @@ class Title(Base):
     end_year = Column(Integer, nullable=True)
     runtime_minutes = Column(Integer)
 
-    names = relationship("Name", secondary=NameTitle, backref='title')
-    genres = relationship("Genre", secondary=GenreTitle, backref='title')
+    names = relationship("NameModel", secondary=NameTitle, backref='title', cascade='delete,all')
+    genres = relationship("GenreModel", secondary=GenreTitle, backref='title', cascade='delete,all')
 
 
-class Name(Base):
+class NameModel(Base):
     __tablename__ = 'name'
 
     id = Column(Integer, primary_key=True)
@@ -46,24 +46,24 @@ class Name(Base):
     birth_year = Column(Integer)
     death_year = Column(Integer, nullable=True)
 
-    titles = relationship("Title", secondary=NameTitle, backref='name')
-    professions = relationship("Profession", secondary=ProfessionName, backref='name')
+    titles = relationship("TitleModel", secondary=NameTitle, backref='name', cascade='delete,all')
+    professions = relationship("ProfessionModel", secondary=ProfessionName, backref='name', cascade='delete,all')
 
 
-class Principal(Base):
+class PrincipalModel(Base):
     __tablename__ = 'principal'
 
     id = Column(Integer, primary_key=True)
     job = Column(String(20))
 
     title_id = Column(Integer, ForeignKey('title.id'))
-    title = relationship("Title", uselist=False)
+    title = relationship("TitleModel", uselist=False, cascade='delete,all')
 
     name_id = Column(Integer, ForeignKey('name.id'))
-    name = relationship("Name", uselist=False)
+    name = relationship("NameModel", uselist=False, cascade='delete,all')
 
 
-class Rating(Base):
+class RatingModel(Base):
     __tablename__ = 'rating'
 
     id = Column(Integer, primary_key=True)
@@ -71,22 +71,22 @@ class Rating(Base):
     num_votes = Column(Integer)
 
     title_id = Column(Integer, ForeignKey('title.id'))
-    title = relationship("Title", uselist=False)
+    title = relationship("TitleModel", uselist=False, cascade='delete,all')
 
 
-class Profession(Base):
+class ProfessionModel(Base):
     __tablename__ = 'profession'
 
     id = Column(Integer, primary_key=True)
     profession = Column(String(50), nullable=False)
 
-    names = relationship("Name", secondary=ProfessionName, backref='profession')
+    names = relationship("NameModel", secondary=ProfessionName, backref='profession', cascade='delete,all')
 
 
-class Genre(Base):
+class GenreModel(Base):
     __tablename__ = 'genre'
 
     id = Column(Integer, primary_key=True)
     genre = Column(String(50), nullable=False)
 
-    titles = relationship("Title", secondary=GenreTitle, backref='genre')
+    titles = relationship("TitleModel", secondary=GenreTitle, backref='genre', cascade='delete,all')

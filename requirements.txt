@@ -1,5 +1,9 @@
 PyYAML
 beautifulsoup4
+Flask
+Flask-GraphQL
+graphene
+graphene-sqlalchemy
 psutil
 psycopg2-binary
 pytest

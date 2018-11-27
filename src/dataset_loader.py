@@ -26,7 +26,7 @@ class DatasetLoader:
 
     def db_init(self):
         self.db_uri = self.db_uri
-        self.engine = create_engine(f'{self.db_uri}')
+        self.engine = create_engine(self.db_uri)
         self.metadata = models.Base.metadata
         self.metadata.create_all(bind=self.engine)
         self.metadata.reflect(bind=self.engine)
@@ -36,9 +36,9 @@ class DatasetLoader:
         for table_name, _ in self.dataset_paths:
             self._copy_table(table_name)
         self._copy_table(models.NameTitle.name)
-        self._copy_table(models.Profession.__tablename__)
+        self._copy_table(models.ProfessionModel.__tablename__)
         self._copy_table(models.ProfessionName.name)
-        self._copy_table(models.Genre.__tablename__)
+        self._copy_table(models.GenreModel.__tablename__)
         self._copy_table(models.GenreTitle.name)
 
     def clean_up(self):
