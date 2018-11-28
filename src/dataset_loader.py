@@ -1,6 +1,5 @@
-from typing import Dict, List, Tuple
-
 from sqlalchemy import create_engine
+from typing import Dict, List, Tuple
 
 import src.models as models
 from src.utils import get_csv_filename, get_table_object
@@ -18,8 +17,6 @@ class DatasetLoader:
         if self.resume is not None:
             idx = [el[0] for el in self.dataset_paths].index(self.resume)
             self.dataset_paths = list(self.dataset_paths)[idx:]
-        if cmd_args.one:
-            self.dataset_paths = [self.dataset_paths[0]]
 
         self.csv_extension = config['csv_extension']
         self.engine = None

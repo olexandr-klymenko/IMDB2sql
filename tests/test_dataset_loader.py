@@ -23,7 +23,6 @@ class TestDataSetLoader(unittest.TestCase):
         cmd_args.dburi = "postgresql+psycopg2://postgres@127.0.0.1:5434/postgres"
         cmd_args.root = DATASET_DIR
         cmd_args.resume = None
-        cmd_args.one = False
         cmd_args.quiet = True
 
         cls.dataset_parser = DatasetParser(cmd_args, CONFIG)
@@ -45,7 +44,9 @@ class TestDataSetLoader(unittest.TestCase):
         self.assertSetEqual(set([title.id for title in name_model.titles]), {1, 2, 3, 4})
 
     def test_titles(self):
-        title_model: models.TitleModel = self.session.query(models.TitleModel).filter(models.TitleModel.id == 2).all()[0]
+        title_model: models.TitleModel = self.session.query(
+            models.TitleModel
+        ).filter(models.TitleModel.id == 2).all()[0]
         self.assertEqual(title_model.primary_title, 'Le clown et ses chiens')
         self.assertEqual(
             set(name.id for name in title_model.names), {1, 6, 9}
