@@ -1,27 +1,58 @@
 import graphene
-from graphene import relay
 from graphene_sqlalchemy import SQLAlchemyObjectType
+from sqlalchemy import and_
 
 import src.models as models
 
 
-class TitleType(SQLAlchemyObjectType):
+class ActiveSQLAlchemyObjectType(SQLAlchemyObjectType):
+    class Meta:
+        abstract = True
+
+    @classmethod
+    def get_node(cls, info, _id):
+        return cls.get_query(
+            info
+        ).filter(
+            and_(
+                cls._meta.model.deleted_at == None,
+                cls._meta.model.id == _id
+            )
+        ).first()
+
+
+class TitleType(ActiveSQLAlchemyObjectType):
     class Meta:
         model = models.TitleModel
-        interfaces = (relay.Node,)
 
 
-class NameType(SQLAlchemyObjectType):
+class NameType(ActiveSQLAlchemyObjectType):
     class Meta:
         model = models.NameModel
-        interfaces = (relay.Node,)
+
+
+class PrincipalType(ActiveSQLAlchemyObjectType):
+    class Meta:
+        model = models.PrincipalModel
+
+
+class RatingType(ActiveSQLAlchemyObjectType):
+    class Meta:
+        model = models.RatingModel
+
+
+class GenreType(ActiveSQLAlchemyObjectType):
+    class Meta:
+        model = models.GenreModel
 
 
 class Query(graphene.ObjectType):
-    node = relay.Node.Field()
 
     titles = graphene.List(TitleType)
     names = graphene.List(NameType)
+    principals = graphene.List(PrincipalType)
+    ratings = graphene.List(RatingType)
+    genres = graphene.List(GenreType)
 
     def resolve_titles(self, info):
         query = TitleType.get_query(info)
@@ -29,6 +60,18 @@ class Query(graphene.ObjectType):
 
     def resolve_names(self, info):
         query = NameType.get_query(info)
+        return query.all()
+
+    def resolve_principals(self, info):
+        query = PrincipalType.get_query(info)
+        return query.all()
+
+    def resolve_ratings(self, info):
+        query = RatingType.get_query(info)
+        return query.all()
+
+    def resolve_genres(self, info):
+        query = GenreType.get_query(info)
         return query.all()
 
 

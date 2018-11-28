@@ -1,18 +1,18 @@
-import sys
-from collections import namedtuple
-
 import gzip
 import os
-import psutil
 import re
+import sys
 import tempfile
 import urllib.parse
 import urllib.request
-import yaml
-from bs4 import BeautifulSoup
+from collections import namedtuple
 from multiprocessing import Pool
 from os.path import join, exists
 from typing import List, Dict, Union
+
+import psutil
+import yaml
+from bs4 import BeautifulSoup
 
 DATA_SET_FILENAME_PATTERN = re.compile('^/(.*).gz')
 CURSOR_UP_ONE = '\x1b[1A'
@@ -80,8 +80,6 @@ class DataSetsHandler:
             if exists(data_set.extracted):
                 os.remove(data_set.extracted)
 
-
-# TODO: Implement GraphQL
 
 def overwrite_upper_line(content: str, quiet=False):
     """

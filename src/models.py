@@ -35,6 +35,8 @@ class TitleModel(Base):
     runtime_minutes = Column(Integer)
 
     names = relationship("NameModel", secondary=NameTitle, backref='title', cascade='delete,all')
+    principals = relationship("PrincipalModel", backref='title', cascade='delete,all')
+    rating = relationship("RatingModel", backref='title', uselist=False, cascade='delete,all')
     genres = relationship("GenreModel", secondary=GenreTitle, backref='title', cascade='delete,all')
 
 
@@ -57,7 +59,6 @@ class PrincipalModel(Base):
     job = Column(String(20))
 
     title_id = Column(Integer, ForeignKey('title.id'))
-    title = relationship("TitleModel", uselist=False, cascade='delete,all')
 
     name_id = Column(Integer, ForeignKey('name.id'))
     name = relationship("NameModel", uselist=False, cascade='delete,all')
@@ -71,7 +72,6 @@ class RatingModel(Base):
     num_votes = Column(Integer)
 
     title_id = Column(Integer, ForeignKey('title.id'))
-    title = relationship("TitleModel", uselist=False, cascade='delete,all')
 
 
 class ProfessionModel(Base):
