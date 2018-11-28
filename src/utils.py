@@ -10,7 +10,6 @@ from multiprocessing import Pool
 from os.path import join, exists
 from typing import List, Dict, Union
 
-import psutil
 import yaml
 from bs4 import BeautifulSoup
 
@@ -111,14 +110,19 @@ def get_null(value: str):
         return value
 
 
-def get_footprint() -> int:
-    process = psutil.Process(os.getpid())
-    return process.memory_info().rss
-
-
-def get_pretty_int(value: int) -> str:
-    return "{:,}".format(value)
-
-
 def get_csv_filename(csv_extension, root, table_name):
     return join(root, f'{table_name}.{csv_extension}')
+
+
+def get_table_object(table):
+    """
+    Returns Table object
+    :param table: Union[Table, Model]
+    :return: Table object
+    """
+    try:
+        _ = table.delete
+    except AttributeError:
+        return table.__table__
+    else:
+        return table

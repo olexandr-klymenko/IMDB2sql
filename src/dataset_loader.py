@@ -1,8 +1,9 @@
-from sqlalchemy import create_engine
 from typing import Dict, List, Tuple
 
+from sqlalchemy import create_engine
+
 import src.models as models
-from src.utils import get_csv_filename
+from src.utils import get_csv_filename, get_table_object
 
 
 class DatasetLoader:
@@ -16,7 +17,7 @@ class DatasetLoader:
         self.dataset_paths: List[Tuple] = config['dataset_paths'].items()
         if self.resume is not None:
             idx = [el[0] for el in self.dataset_paths].index(self.resume)
-            self.dataset_paths = self.dataset_paths[idx:]
+            self.dataset_paths = list(self.dataset_paths)[idx:]
         if cmd_args.one:
             self.dataset_paths = [self.dataset_paths[0]]
 
@@ -44,10 +45,13 @@ class DatasetLoader:
     def clean_up(self):
         tables = self._get_sorted_tables(self.metadata.sorted_tables)
         for table in tables:
+            table_obj = get_table_object(table)
             if not self.quiet:
-                print(f"Cleaning up table '{table.name}' ...")
-            self.engine.execute(table.delete())
-            if table.name == self.resume:
+                print(f"Cleaning up table '{table_obj.name}' ...")
+
+            self.engine.execute(table_obj.delete())
+
+            if table_obj.name == self.resume:
                 break
 
     def _copy_table(self, table_name):
@@ -70,4 +74,6 @@ class DatasetLoader:
         sorted_tables.insert(0, models.NameTitle)
         sorted_tables.insert(1, models.ProfessionName)
         sorted_tables.insert(2, models.GenreTitle)
+        sorted_tables.insert(3, models.ProfessionModel)
+        sorted_tables.insert(4, models.GenreModel)
         return sorted_tables
