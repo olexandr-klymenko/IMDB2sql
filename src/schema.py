@@ -48,6 +48,11 @@ class GenreType(ActiveSQLAlchemyObjectType):
         model = models.GenreModel
 
 
+class ProfessionType(ActiveSQLAlchemyObjectType):
+    class Meta:
+        model = models.ProfessionModel
+
+
 class Query(graphene.ObjectType):
 
     titles = graphene.List(lambda: TitleType, primary_title=graphene.String(), limit=graphene.Int())
@@ -55,6 +60,7 @@ class Query(graphene.ObjectType):
     principals = graphene.List(lambda: PrincipalType, limit=graphene.Int())
     ratings = graphene.List(lambda: RatingType, limit=graphene.Int())
     genres = graphene.List(GenreType)
+    professions = graphene.List(ProfessionType)
 
     def resolve_titles(self, info, primary_title=None, limit=QUERY_LIMIT):
         query = TitleType.get_query(info)
@@ -78,6 +84,10 @@ class Query(graphene.ObjectType):
 
     def resolve_genres(self, info):
         query = GenreType.get_query(info)
+        return query.all()
+
+    def resolve_professions(self, info):
+        query = ProfessionType.get_query(info)
         return query.all()
 
 
