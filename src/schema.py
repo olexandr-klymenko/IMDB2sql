@@ -56,6 +56,8 @@ class ProfessionType(ActiveSQLAlchemyObjectType):
 class Query(graphene.ObjectType):
 
     titles = graphene.List(lambda: TitleType, primary_title=graphene.String(), limit=graphene.Int())
+    common_titles = graphene.List(lambda: TitleType, names=graphene.List(graphene.String))
+    common_names = graphene.List(lambda: NameType, titles=graphene.List(graphene.String))
     names = graphene.List(lambda: NameType, primary_name=graphene.String(), limit=graphene.Int())
     principals = graphene.List(lambda: PrincipalType, limit=graphene.Int())
     ratings = graphene.List(lambda: RatingType, limit=graphene.Int())
@@ -65,13 +67,23 @@ class Query(graphene.ObjectType):
     def resolve_titles(self, info, primary_title=None, limit=QUERY_LIMIT):
         query = TitleType.get_query(info)
         if primary_title is not None:
-            return query.filter(models.TitleModel.primary_title.like(f'%{primary_title}%')).limit(limit)
+            return query.filter(models.TitleModel.primary_title == primary_title)
         return query.limit(limit)
+
+    def resolve_common_titles(self, info, names=None):
+        query = NameType.get_query(info)
+        name_models = query.filter(models.NameModel.primary_name.in_(names)).all()
+        return set.intersection(*[set(el.titles) for el in name_models])
+
+    def resolve_common_names(self, info, titles=None):
+        query = TitleType.get_query(info)
+        title_models = query.filter(models.TitleModel.primary_title.in_(titles)).all()
+        return set.intersection(*[set(el.names) for el in title_models])
 
     def resolve_names(self, info, primary_name=None, limit=QUERY_LIMIT):
         query = NameType.get_query(info)
         if primary_name:
-            return query.filter(models.NameModel.primary_name.like(f'%{primary_name}%')).limit(limit)
+            return query.filter(models.NameModel.primary_name == primary_name)
         return query.limit(limit)
 
     def resolve_principals(self, info, limit=QUERY_LIMIT):

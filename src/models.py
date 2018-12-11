@@ -28,7 +28,7 @@ class TitleModel(Base):
 
     id = Column(Integer, primary_key=True)
     title_type = Column(String(20))
-    primary_title = Column(String(450))
+    primary_title = Column(String(450), index=True)
     is_adult = Column(Boolean)
     start_year = Column(Integer)
     end_year = Column(Integer, nullable=True)
@@ -44,7 +44,7 @@ class NameModel(Base):
     __tablename__ = 'name'
 
     id = Column(Integer, primary_key=True)
-    primary_name = Column(String(120))
+    primary_name = Column(String(120), index=True)
     birth_year = Column(Integer)
     death_year = Column(Integer, nullable=True)
 
