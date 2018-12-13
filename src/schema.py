@@ -139,3 +139,6 @@ class Query(graphene.ObjectType):
 
 
 schema = graphene.Schema(query=Query)
+
+
+# TODO: Add mutations
