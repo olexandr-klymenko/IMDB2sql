@@ -138,8 +138,6 @@ class DatasetParser:
                     name_id,
                 )
                 yield data_line, progress
-            else:
-                self.errors[PRINCIPAL].append(data)
 
     def _parse_rating(self, dataset_path):
         for idx, (data, progress) in enumerate(self._parse_raw_dataset(dataset_path)):
@@ -152,8 +150,6 @@ class DatasetParser:
                     title_id
                 )
                 yield data_line, progress
-            else:
-                self.errors[RATING].append(data)
 
     def _parse_raw_dataset(self, file_path):
         size = getsize(file_path)
