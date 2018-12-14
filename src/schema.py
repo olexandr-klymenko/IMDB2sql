@@ -45,7 +45,7 @@ class ProfessionType(ActiveSQLAlchemyObjectType):
 class Query(graphene.ObjectType):
 
     title = graphene.List(lambda: TitleType, id=graphene.ID())
-    titles = graphene.List(lambda: TitleType, search=graphene.String(), genre=graphene.String(), limit=graphene.Int())
+    titles = graphene.List(lambda: TitleType, search=graphene.String(), limit=graphene.Int())
     common_titles = graphene.List(lambda: graphene.String, names=graphene.List(graphene.String))
     name = graphene.List(lambda: NameType, id=graphene.ID())
     names = graphene.List(lambda: NameType,
@@ -63,12 +63,10 @@ class Query(graphene.ObjectType):
         query = TitleType.get_query(info)
         return query.filter(models.TitleModel.id == id)
 
-    def resolve_titles(self, info, search: str, genre=None, limit=QUERY_LIMIT):
+    def resolve_titles(self, info, search: str=None, limit=QUERY_LIMIT):
         query = TitleType.get_query(info)
         return query.filter(
-            models.TitleModel.primary_title.ilike(f'%{search}%')
-        ).filter(
-            models.GenreModel.genre == genre if genre else True
+            models.TitleModel.primary_title.ilike(search) if search else True
         ).limit(limit)
 
     def resolve_common_titles(self, info, names):
@@ -92,10 +90,10 @@ class Query(graphene.ObjectType):
         query = NameType.get_query(info)
         return query.filter(models.NameModel.id == id)
 
-    def resolve_names(self, info, search: str, profession=None, limit=QUERY_LIMIT):
+    def resolve_names(self, info, search: str=None, profession=None, limit=QUERY_LIMIT):
         query = NameType.get_query(info)
         return query.filter(
-            models.NameModel.primary_name.ilike(search)
+            models.NameModel.primary_name.ilike(search) if search else True
         ).filter(
             models.ProfessionModel.profession == profession if profession else True
         ).limit(limit)
