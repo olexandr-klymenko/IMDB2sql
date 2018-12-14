@@ -1,6 +1,5 @@
 import graphene
 from graphene_sqlalchemy import SQLAlchemyObjectType
-from sqlalchemy import and_
 from sqlalchemy.sql.functions import count
 
 import src.models as models
@@ -11,17 +10,6 @@ QUERY_LIMIT = 500
 class ActiveSQLAlchemyObjectType(SQLAlchemyObjectType):
     class Meta:
         abstract = True
-
-    @classmethod
-    def get_node(cls, info, _id):
-        return cls.get_query(
-            info
-        ).filter(
-            and_(
-                cls._meta.model.deleted_at == None,
-                cls._meta.model.id == _id
-            )
-        ).first()
 
 
 class TitleType(ActiveSQLAlchemyObjectType):
@@ -56,26 +44,32 @@ class ProfessionType(ActiveSQLAlchemyObjectType):
 
 class Query(graphene.ObjectType):
 
-    titles = graphene.List(lambda: TitleType, primary_title=graphene.String(), limit=graphene.Int())
-    search_titles = graphene.List(lambda: TitleType, search=graphene.String(), limit=graphene.Int())
+    title = graphene.List(lambda: TitleType, id=graphene.ID())
+    titles = graphene.List(lambda: TitleType, search=graphene.String(), genre=graphene.String(), limit=graphene.Int())
     common_titles = graphene.List(lambda: graphene.String, names=graphene.List(graphene.String))
-    names = graphene.List(lambda: NameType, primary_name=graphene.String(), limit=graphene.Int())
-    search_names = graphene.List(lambda: NameType, search=graphene.String(), limit=graphene.Int())
+    name = graphene.List(lambda: NameType, id=graphene.ID())
+    names = graphene.List(lambda: NameType,
+                          search=graphene.String(),
+                          profession=graphene.String(),
+                          limit=graphene.Int()
+                          )
     common_names = graphene.List(lambda: graphene.String, titles=graphene.List(graphene.String))
     principals = graphene.List(lambda: PrincipalType, limit=graphene.Int())
     ratings = graphene.List(lambda: RatingType, limit=graphene.Int())
     genres = graphene.List(GenreType)
     professions = graphene.List(ProfessionType)
 
-    def resolve_titles(self, info, primary_title=None, limit=QUERY_LIMIT):
+    def resolve_title(self, info, id):
         query = TitleType.get_query(info)
-        if primary_title is not None:
-            return query.filter(models.TitleModel.primary_title == primary_title)
-        return query.limit(limit)
+        return query.filter(models.TitleModel.id == id)
 
-    def resolve_search_titles(self, info, search, limit=QUERY_LIMIT):
+    def resolve_titles(self, info, search: str, genre=None, limit=QUERY_LIMIT):
         query = TitleType.get_query(info)
-        return query.filter(models.TitleModel.primary_title.like(f'{search}%')).limit(limit)
+        return query.filter(
+            models.TitleModel.primary_title.ilike(f'%{search}%')
+        ).filter(
+            models.GenreModel.genre == genre if genre else True
+        ).limit(limit)
 
     def resolve_common_titles(self, info, names):
         name_query = NameType.get_query(info)
@@ -94,15 +88,17 @@ class Query(graphene.ObjectType):
         )
         return [value for value, in result]
 
-    def resolve_names(self, info, primary_name=None, limit=QUERY_LIMIT):
+    def resolve_name(self, info, id):
         query = NameType.get_query(info)
-        if primary_name:
-            return query.filter(models.NameModel.primary_name == primary_name)
-        return query.limit(limit)
+        return query.filter(models.NameModel.id == id)
 
-    def resolve_search_names(self, info, search, limit=QUERY_LIMIT):
+    def resolve_names(self, info, search: str, profession=None, limit=QUERY_LIMIT):
         query = NameType.get_query(info)
-        return query.filter(models.NameModel.primary_name.like(f'{search}%')).limit(limit)
+        return query.filter(
+            models.NameModel.primary_name.ilike(search)
+        ).filter(
+            models.ProfessionModel.profession == profession if profession else True
+        ).limit(limit)
 
     def resolve_common_names(self, info, titles):
         title_query = TitleType.get_query(info)
