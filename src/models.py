@@ -27,11 +27,9 @@ class TitleModel(Base):
     __tablename__ = 'title'
 
     id = Column(Integer, primary_key=True)
-    title_type = Column(String(20))
     primary_title = Column(String(450), index=True)
     is_adult = Column(Boolean)
     start_year = Column(Integer)
-    end_year = Column(Integer, nullable=True)
     runtime_minutes = Column(Integer)
 
     names = relationship("NameModel", secondary=NameTitle, backref='title', cascade='delete,all')
@@ -50,6 +48,7 @@ class NameModel(Base):
 
     titles = relationship("TitleModel", secondary=NameTitle, backref='name', cascade='delete,all')
     professions = relationship("ProfessionModel", secondary=ProfessionName, backref='name', cascade='delete,all')
+    principals = relationship("PrincipalModel", backref='name', cascade='delete,all')
 
 
 class PrincipalModel(Base):
@@ -59,9 +58,7 @@ class PrincipalModel(Base):
     job = Column(String(20))
 
     title_id = Column(Integer, ForeignKey('title.id'))
-
     name_id = Column(Integer, ForeignKey('name.id'))
-    name = relationship("NameModel", uselist=False, cascade='delete,all')
 
 
 class RatingModel(Base):

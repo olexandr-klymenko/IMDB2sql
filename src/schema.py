@@ -4,7 +4,7 @@ from sqlalchemy.sql.functions import count
 
 import src.models as models
 
-QUERY_LIMIT = 500
+QUERY_LIMIT = 50
 
 
 class ActiveSQLAlchemyObjectType(SQLAlchemyObjectType):
@@ -45,7 +45,7 @@ class ProfessionType(ActiveSQLAlchemyObjectType):
 class Query(graphene.ObjectType):
 
     title = graphene.List(lambda: TitleType, id=graphene.ID())
-    titles = graphene.List(lambda: TitleType, search=graphene.String(), limit=graphene.Int())
+    titles = graphene.List(lambda: TitleType, search=graphene.String(), genre=graphene.String(), limit=graphene.Int())
     common_titles = graphene.List(lambda: graphene.String, names=graphene.List(graphene.String))
     name = graphene.List(lambda: NameType, id=graphene.ID())
     names = graphene.List(lambda: NameType,
@@ -56,17 +56,23 @@ class Query(graphene.ObjectType):
     common_names = graphene.List(lambda: graphene.String, titles=graphene.List(graphene.String))
     principals = graphene.List(lambda: PrincipalType, limit=graphene.Int())
     ratings = graphene.List(lambda: RatingType, limit=graphene.Int())
-    genres = graphene.List(GenreType)
-    professions = graphene.List(ProfessionType)
+    genres = graphene.List(GenreType, search=graphene.String())
+    professions = graphene.List(ProfessionType, search=graphene.String())
 
     def resolve_title(self, info, id):
         query = TitleType.get_query(info)
         return query.filter(models.TitleModel.id == id)
 
-    def resolve_titles(self, info, search: str=None, limit=QUERY_LIMIT):
+    def resolve_titles(self, info, search: str=None, genre: str=None, limit=QUERY_LIMIT):
         query = TitleType.get_query(info)
-        return query.filter(
+        return query.join(
+            models.GenreTitle
+        ).join(
+            models.GenreModel
+        ).filter(
             models.TitleModel.primary_title.ilike(search) if search else True
+        ).filter(
+            models.GenreModel.genre == genre if genre else True
         ).limit(limit)
 
     def resolve_common_titles(self, info, names):
@@ -92,7 +98,11 @@ class Query(graphene.ObjectType):
 
     def resolve_names(self, info, search: str=None, profession=None, limit=QUERY_LIMIT):
         query = NameType.get_query(info)
-        return query.filter(
+        return query.join(
+            models.ProfessionName
+        ).join(
+            models.ProfessionModel
+        ).filter(
             models.NameModel.primary_name.ilike(search) if search else True
         ).filter(
             models.ProfessionModel.profession == profession if profession else True
@@ -123,16 +133,16 @@ class Query(graphene.ObjectType):
         query = RatingType.get_query(info)
         return query.limit(limit)
 
-    def resolve_genres(self, info):
+    def resolve_genres(self, info, search: str=None):
         query = GenreType.get_query(info)
-        return query.all()
+        return query.filter(models.GenreModel.genre.ilike(search) if search else True)
 
-    def resolve_professions(self, info):
+    def resolve_professions(self, info, search: str=None):
         query = ProfessionType.get_query(info)
-        return query.all()
+        return query.filter(models.ProfessionModel.profession.ilike(search) if search else True)
 
 
 schema = graphene.Schema(query=Query)
 
 
-# TODO: Add mutations
+# TODO: Fix Common Names and Common Titles: take into account Principals model

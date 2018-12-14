@@ -29,6 +29,7 @@ class DatasetParser:
         self.dataset_paths = config['dataset_paths'].items()
         self.delimiter = config['dataset_delimiter']
         self.csv_extension = config['csv_extension']
+        self.title_filter = config['title_filter']
 
         self.profession_names = defaultdict(list)
         self.genre_titles = defaultdict(list)
@@ -69,14 +70,15 @@ class DatasetParser:
     def _parse_title(self, dataset_path):
         for data, progress in self._parse_raw_dataset(dataset_path):
             try:
+                if data['titleType'] != self.title_filter:
+                    continue
+
                 title_id = get_int(data['tconst'])
                 data_line = (
                     title_id,
-                    data['titleType'],
                     data['primaryTitle'],
                     bool(data['isAdult']),
                     get_null(data['startYear']),
-                    get_null(data['endYear']),
                     get_null(data['runtimeMinutes'])
                 )
                 genres_from_dataset = get_null(data['genres'])
