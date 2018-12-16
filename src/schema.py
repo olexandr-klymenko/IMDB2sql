@@ -145,4 +145,4 @@ class Query(graphene.ObjectType):
 schema = graphene.Schema(query=Query)
 
 
-# TODO: Fix Common Names and Common Titles: take into account Principals model
+# TODO: Fix Common Names and Common Titles: don't work
