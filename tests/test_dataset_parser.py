@@ -16,7 +16,7 @@ EXPECTED_DATA = {
     'profession_name.csv': 25,
     'rating.csv': 8,
     'title.csv': 8,
-    'name_title.csv': 27,
+    'name_title.csv': 37,
     'genre.csv': 6,
     'genre_title.csv': 15,
     'name.csv': 9
@@ -24,8 +24,7 @@ EXPECTED_DATA = {
 
 EXPECTED_ERRORS = {'title': [
     {'tconst': 'tt0000009', 'titleType': 'movie', 'primaryTitle': 'Miss Jerry', 'originalTitle': 'Miss Jerry',
-     'isAdult': '0', 'startYear': '1894', 'endYear': '\\N', 'runtimeMinutes': 'Romance'}],
-    'rating': [{'tconst': 'tt0000009', 'averageRating': '5.5', 'numVotes': '67'}]}
+     'isAdult': '0', 'startYear': '1894', 'endYear': '\\N', 'runtimeMinutes': 'Romance'}]}
 
 
 class TestDataSetParser(unittest.TestCase):

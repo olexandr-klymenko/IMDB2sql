@@ -128,16 +128,21 @@ class DatasetParser:
                 yield data_line
 
     def _parse_principal(self, dataset_path):
-        for idx, (data, progress) in enumerate(self._parse_raw_dataset(dataset_path)):
-            title_id, name_id = get_int(data['tconst']), get_int(data['nconst'])
-            if title_id in self.indices[TITLE] and name_id in self.indices[NAME]:
-                data_line = (
-                    idx,
-                    data['category'],
-                    title_id,
-                    name_id,
-                )
-                yield data_line, progress
+        with open(join(self.root, f'{NAME_TITLE}.{self.csv_extension}'), 'a') as dataset_out:
+            writer = csv.writer(dataset_out)
+
+            for idx, (data, progress) in enumerate(self._parse_raw_dataset(dataset_path)):
+                title_id, name_id = get_int(data['tconst']), get_int(data['nconst'])
+                if title_id in self.indices[TITLE] and name_id in self.indices[NAME]:
+                    data_line = (
+                        idx,
+                        data['category'],
+                        title_id,
+                        name_id,
+                    )
+                    yield data_line, progress
+
+                    writer.writerow((name_id, title_id))
 
     def _parse_rating(self, dataset_path):
         for idx, (data, progress) in enumerate(self._parse_raw_dataset(dataset_path)):
