@@ -16,7 +16,7 @@ EXPECTED_DATA = {
     'profession_name.csv': 25,
     'rating.csv': 8,
     'title.csv': 8,
-    'name_title.csv': 37,
+    'name_title.csv': 27,
     'genre.csv': 6,
     'genre_title.csv': 15,
     'name.csv': 9

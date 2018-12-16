@@ -3,7 +3,7 @@ from collections import defaultdict
 import pprint
 import csv
 from os.path import join, getsize
-from typing import Iterator, Dict
+from typing import Iterator, Dict, List, Set, Tuple
 
 from src import models
 from src.utils import overwrite_upper_line, get_int, get_null, get_csv_filename
@@ -33,6 +33,7 @@ class DatasetParser:
 
         self.profession_names = defaultdict(list)
         self.genre_titles = defaultdict(list)
+        self.name_title: Set[Tuple] = set()
 
     def parse_dataset(self):
         for table_name, dataset_path in self.dataset_paths:
@@ -42,6 +43,7 @@ class DatasetParser:
 
         self._write_extra_data(PROFESSION, NAME_PROFESSION, self.profession_names)
         self._write_extra_data(GENRE, GENRE_TITLE, self.genre_titles)
+        self._write_name_title()
 
         with open('errors.log', 'w') as ef:
             pprint.pprint(dict(self.errors), ef)
@@ -95,54 +97,49 @@ class DatasetParser:
             self.genre_titles[genre].append(title_id)
 
     def _parse_name(self, dataset_path):
-        with open(join(self.root, f'{NAME_TITLE}.{self.csv_extension}'), 'w') as dataset_out:
-            writer = csv.writer(dataset_out)
-            for data, progress in self._parse_raw_dataset(dataset_path):
-                try:
-                    name_id = get_int(data['nconst'])
-                    data_line = (
-                        name_id,
-                        data['primaryName'],
-                        get_null(data['birthYear']),
-                        get_null(data['deathYear']),
-                    )
-                    profession_from_dataset = get_null(data['primaryProfession'])
-                except KeyError:
-                    self.errors[NAME].append(data)
-                else:
-                    self.indices[NAME].add(name_id)
-                    if profession_from_dataset is not None:
-                        self._update_professions(profession_from_dataset, name_id)
-                    yield data_line, progress
-                    writer.writerows(self._get_name_title_data(data, name_id))
+        for data, progress in self._parse_raw_dataset(dataset_path):
+            try:
+                name_id = get_int(data['nconst'])
+                data_line = (
+                    name_id,
+                    data['primaryName'],
+                    get_null(data['birthYear']),
+                    get_null(data['deathYear']),
+                )
+                profession_from_dataset = get_null(data['primaryProfession'])
+            except KeyError:
+                self.errors[NAME].append(data)
+            else:
+                self.indices[NAME].add(name_id)
+                if profession_from_dataset is not None:
+                    self._update_professions(profession_from_dataset, name_id)
+                yield data_line, progress
+
+                for title_id in self._get_title_ids(data):
+                    self.name_title.add((name_id, title_id))
 
     def _update_professions(self, professions_from_dataset: str, name_id: int):
         for profession in professions_from_dataset.split(','):
             self.profession_names[profession].append(name_id)
 
-    def _get_name_title_data(self, data, name_id):
+    def _get_title_ids(self, data):
         titles = [get_int(el) for el in data['knownForTitles'].split(',') if get_int(el)]
         for title_id in titles:
             if title_id in self.indices[TITLE]:
-                data_line = (name_id, title_id)
-                yield data_line
+                yield title_id
 
     def _parse_principal(self, dataset_path):
-        with open(join(self.root, f'{NAME_TITLE}.{self.csv_extension}'), 'a') as dataset_out:
-            writer = csv.writer(dataset_out)
-
-            for idx, (data, progress) in enumerate(self._parse_raw_dataset(dataset_path)):
-                title_id, name_id = get_int(data['tconst']), get_int(data['nconst'])
-                if title_id in self.indices[TITLE] and name_id in self.indices[NAME]:
-                    data_line = (
-                        idx,
-                        data['category'],
-                        title_id,
-                        name_id,
-                    )
-                    yield data_line, progress
-
-                    writer.writerow((name_id, title_id))
+        for idx, (data, progress) in enumerate(self._parse_raw_dataset(dataset_path)):
+            title_id, name_id = get_int(data['tconst']), get_int(data['nconst'])
+            if title_id in self.indices[TITLE] and name_id in self.indices[NAME]:
+                data_line = (
+                    idx,
+                    data['category'],
+                    title_id,
+                    name_id,
+                )
+                yield data_line, progress
+                self.name_title.add((name_id, title_id))
 
     def _parse_rating(self, dataset_path):
         for idx, (data, progress) in enumerate(self._parse_raw_dataset(dataset_path)):
@@ -166,6 +163,11 @@ class DatasetParser:
                 read_size += len(''.join(line)) + len(line)
                 data = dict(zip(headers, line))
                 yield data, (read_size / size) * 100
+
+    def _write_name_title(self):
+        with open(join(self.root, f'{NAME_TITLE}.{self.csv_extension}'), 'w') as dataset_out:
+            writer = csv.writer(dataset_out)
+            writer.writerows(self.name_title)
 
     def _write_extra_data(self, table: str, mapper: str, extra_data: Dict):
         table_filename = get_csv_filename(self.csv_extension, self.root, table)
