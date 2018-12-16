@@ -46,14 +46,14 @@ class Query(graphene.ObjectType):
 
     title = graphene.List(lambda: TitleType, id=graphene.ID())
     titles = graphene.List(lambda: TitleType, search=graphene.String(), genre=graphene.String(), limit=graphene.Int())
-    common_titles = graphene.List(lambda: graphene.String, names=graphene.List(graphene.String))
+    common_titles = graphene.List(lambda: TitleType, names=graphene.List(graphene.String))
     name = graphene.List(lambda: NameType, id=graphene.ID())
     names = graphene.List(lambda: NameType,
                           search=graphene.String(),
                           profession=graphene.String(),
                           limit=graphene.Int()
                           )
-    common_names = graphene.List(lambda: graphene.String, titles=graphene.List(graphene.String))
+    common_names = graphene.List(lambda: NameType, titles=graphene.List(graphene.String))
     principals = graphene.List(lambda: PrincipalType, limit=graphene.Int())
     ratings = graphene.List(lambda: RatingType, limit=graphene.Int())
     genres = graphene.List(GenreType, search=graphene.String())
@@ -79,18 +79,18 @@ class Query(graphene.ObjectType):
         name_query = NameType.get_query(info)
         name_ids = [n.id for n in name_query.filter(models.NameModel.primary_name.in_(names)).all()]
         session = info.context['session']
-        result = session.query(
-            models.TitleModel.primary_title
+        title_ids = session.query(
+            models.TitleModel.id
         ).join(
             models.NameTitle
         ).filter(
             models.NameTitle.c.name_id.in_(name_ids)
         ).group_by(
-            models.TitleModel.primary_title
+            models.TitleModel.id
         ).having(
-            count(models.TitleModel.primary_title) == len(names)
+            count(models.TitleModel.id) == len(names)
         )
-        return [value for value, in result]
+        return TitleType.get_query(info).filter(models.TitleModel.id.in_(title_ids))
 
     def resolve_name(self, info, id):
         query = NameType.get_query(info)
@@ -112,18 +112,18 @@ class Query(graphene.ObjectType):
         title_query = TitleType.get_query(info)
         title_ids = [t.id for t in title_query.filter(models.TitleModel.primary_title.in_(titles)).all()]
         session = info.context['session']
-        result = session.query(
-            models.NameModel.primary_name
+        name_ids = session.query(
+            models.NameModel.id
         ).join(
             models.NameTitle
         ).filter(
             models.NameTitle.c.title_id.in_(title_ids)
         ).group_by(
-            models.NameModel.primary_name
+            models.NameModel.id
         ).having(
-            count(models.NameModel.primary_name) == len(titles)
+            count(models.NameModel.id) == len(titles)
         )
-        return [value for value, in result]
+        return NameType.get_query(info).filter(models.NameModel.id.in_(name_ids))
 
     def resolve_principals(self, info, limit=QUERY_LIMIT):
         query = PrincipalType.get_query(info)
@@ -143,6 +143,3 @@ class Query(graphene.ObjectType):
 
 
 schema = graphene.Schema(query=Query)
-
-
-# TODO: Fix Common Names and Common Titles: don't work
