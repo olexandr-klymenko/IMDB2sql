@@ -87,3 +87,6 @@ class GenreModel(Base):
     genre = Column(String(50), nullable=False)
 
     titles = relationship("TitleModel", secondary=GenreTitle, backref='genre', cascade='delete,all')
+
+
+# TODO: Create job table: normalization

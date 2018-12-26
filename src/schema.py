@@ -16,10 +16,58 @@ class TitleType(ActiveSQLAlchemyObjectType):
     class Meta:
         model = models.TitleModel
 
+    names = graphene.List(lambda: NameType,
+                          search=graphene.String(),
+                          profession=graphene.String()
+                          )
+
+    def resolve_names(self, info, search: str = None, profession=None):
+        query = NameType.get_query(info)
+        return query.join(
+            models.ProfessionName
+        ).join(
+            models.ProfessionModel
+        ).join(
+            models.NameTitle
+        ).join(
+            models.TitleModel
+        ).filter(
+            models.NameModel.primary_name.ilike(search) if search else True
+        ).filter(
+            models.ProfessionModel.profession == profession if profession else True
+        ).filter(
+            models.TitleModel.id == self.id
+        )
+
 
 class NameType(ActiveSQLAlchemyObjectType):
     class Meta:
         model = models.NameModel
+
+    titles = graphene.List(lambda: TitleType,
+                           search=graphene.String(),
+                           genre=graphene.String(),
+                           period=graphene.List(graphene.Int))
+
+    def resolve_titles(self, info, search: str = None, genre: str = None, period=None):
+        query = TitleType.get_query(info)
+        return query.join(
+            models.GenreTitle
+        ).join(
+            models.GenreModel
+        ).join(
+            models.NameTitle
+        ).join(
+            models.NameModel
+        ).filter(
+            models.TitleModel.primary_title.ilike(search) if search else True
+        ).filter(
+            models.GenreModel.genre == genre if genre else True
+        ).filter(
+            models.TitleModel.start_year.between(period[0], period[1]) if period else True
+        ).filter(
+            models.NameModel.id == self.id
+        )
 
 
 class PrincipalType(ActiveSQLAlchemyObjectType):
@@ -43,9 +91,12 @@ class ProfessionType(ActiveSQLAlchemyObjectType):
 
 
 class Query(graphene.ObjectType):
-
     title = graphene.List(lambda: TitleType, id=graphene.ID())
-    titles = graphene.List(lambda: TitleType, search=graphene.String(), genre=graphene.String(), limit=graphene.Int())
+    titles = graphene.List(lambda: TitleType,
+                           search=graphene.String(),
+                           genre=graphene.String(),
+                           period=graphene.List(graphene.Int),
+                           limit=graphene.Int())
     common_titles = graphene.List(lambda: TitleType, names=graphene.List(graphene.String))
     name = graphene.List(lambda: NameType, id=graphene.ID())
     names = graphene.List(lambda: NameType,
@@ -63,7 +114,7 @@ class Query(graphene.ObjectType):
         query = TitleType.get_query(info)
         return query.filter(models.TitleModel.id == id)
 
-    def resolve_titles(self, info, search: str=None, genre: str=None, limit=QUERY_LIMIT):
+    def resolve_titles(self, info, search: str = None, genre: str = None, period=None, limit=QUERY_LIMIT):
         query = TitleType.get_query(info)
         return query.join(
             models.GenreTitle
@@ -73,6 +124,8 @@ class Query(graphene.ObjectType):
             models.TitleModel.primary_title.ilike(search) if search else True
         ).filter(
             models.GenreModel.genre == genre if genre else True
+        ).filter(
+            models.TitleModel.start_year.between(period[0], period[1]) if period else True
         ).limit(limit)
 
     def resolve_common_titles(self, info, names):
@@ -96,7 +149,7 @@ class Query(graphene.ObjectType):
         query = NameType.get_query(info)
         return query.filter(models.NameModel.id == id)
 
-    def resolve_names(self, info, search: str=None, profession=None, limit=QUERY_LIMIT):
+    def resolve_names(self, info, search: str = None, profession=None, limit=QUERY_LIMIT):
         query = NameType.get_query(info)
         return query.join(
             models.ProfessionName
@@ -133,11 +186,11 @@ class Query(graphene.ObjectType):
         query = RatingType.get_query(info)
         return query.limit(limit)
 
-    def resolve_genres(self, info, search: str=None):
+    def resolve_genres(self, info, search: str = None):
         query = GenreType.get_query(info)
         return query.filter(models.GenreModel.genre.ilike(search) if search else True)
 
-    def resolve_professions(self, info, search: str=None):
+    def resolve_professions(self, info, search: str = None):
         query = ProfessionType.get_query(info)
         return query.filter(models.ProfessionModel.profession.ilike(search) if search else True)
 
