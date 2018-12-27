@@ -17,6 +17,7 @@ PROFESSION = models.ProfessionModel.__tablename__
 NAME_PROFESSION = models.ProfessionName.name
 GENRE = models.GenreModel.__tablename__
 GENRE_TITLE = models.GenreTitle.name
+JOB = models.JobModel.__tablename__
 
 
 class DatasetParser:
@@ -34,6 +35,7 @@ class DatasetParser:
         self.profession_names = defaultdict(list)
         self.genre_titles = defaultdict(list)
         self.name_title: Set[Tuple] = set()
+        self.jobs: Dict = {}
 
     def parse_dataset(self):
         for table_name, dataset_path in self.dataset_paths:
@@ -44,6 +46,7 @@ class DatasetParser:
         self._write_extra_data(PROFESSION, NAME_PROFESSION, self.profession_names)
         self._write_extra_data(GENRE, GENRE_TITLE, self.genre_titles)
         self._write_name_title()
+        self._write_jobs()
 
         with open('errors.log', 'w') as ef:
             pprint.pprint(dict(self.errors), ef)
@@ -132,14 +135,20 @@ class DatasetParser:
         for idx, (data, progress) in enumerate(self._parse_raw_dataset(dataset_path)):
             title_id, name_id = get_int(data['tconst']), get_int(data['nconst'])
             if title_id in self.indices[TITLE] and name_id in self.indices[NAME]:
+                job = data['category']
+                self._update_jobs(job)
                 data_line = (
                     idx,
-                    data['category'],
                     title_id,
                     name_id,
+                    self.jobs[job],
                 )
                 yield data_line, progress
                 self.name_title.add((name_id, title_id))
+
+    def _update_jobs(self, job):
+        if job not in self.jobs:
+            self.jobs[job] = len(self.jobs) + 1
 
     def _parse_rating(self, dataset_path):
         for idx, (data, progress) in enumerate(self._parse_raw_dataset(dataset_path)):
@@ -166,6 +175,7 @@ class DatasetParser:
 
     def _write_name_title(self):
         with open(join(self.root, f'{NAME_TITLE}.{self.csv_extension}'), 'w') as dataset_out:
+            print(f"Dumping to f'{NAME_TITLE}.{self.csv_extension}' file ...")
             writer = csv.writer(dataset_out)
             writer.writerows(self.name_title)
 
@@ -182,6 +192,12 @@ class DatasetParser:
                     table_writer.writerow([idx, field])
                     for table_id in table_ids:
                         mapper_writer.writerow([idx, table_id])
+
+    def _write_jobs(self):
+        with open(join(self.root, f'{JOB}.{self.csv_extension}'), 'w') as dataset_out:
+            print(f"Dumping to f'{JOB}.{self.csv_extension}' file ...")
+            writer = csv.writer(dataset_out)
+            writer.writerows([(value, key) for key, value in self.jobs.items()])
 
 # TODO: Implement writing and reading to gzipped csv files
 # TODO: Implement string fields size validation

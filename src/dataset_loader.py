@@ -31,6 +31,7 @@ class DatasetLoader:
 
     def load_dataset(self):
         self.clean_up()
+        self._copy_table(models.JobModel.__tablename__)
         for table_name, _ in self.dataset_paths:
             self._copy_table(table_name)
         self._copy_table(models.NameTitle.name)

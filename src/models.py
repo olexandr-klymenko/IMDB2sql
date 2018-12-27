@@ -51,14 +51,25 @@ class NameModel(Base):
     principals = relationship("PrincipalModel", backref='name', cascade='delete,all')
 
 
-class PrincipalModel(Base):
-    __tablename__ = 'principal'
+class JobModel(Base):
+    __tablename__ = 'job'
 
     id = Column(Integer, primary_key=True)
     job = Column(String(20))
 
+    principals = relationship("PrincipalModel", cascade='delete,all')
+
+
+class PrincipalModel(Base):
+    __tablename__ = 'principal'
+
+    id = Column(Integer, primary_key=True)
+
     title_id = Column(Integer, ForeignKey('title.id'))
     name_id = Column(Integer, ForeignKey('name.id'))
+    job_id = Column(Integer, ForeignKey('job.id'))
+
+    job = relationship("JobModel", uselist=False)
 
 
 class RatingModel(Base):
@@ -87,6 +98,3 @@ class GenreModel(Base):
     genre = Column(String(50), nullable=False)
 
     titles = relationship("TitleModel", secondary=GenreTitle, backref='genre', cascade='delete,all')
-
-
-# TODO: Create job table: normalization

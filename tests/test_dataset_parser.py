@@ -19,7 +19,8 @@ EXPECTED_DATA = {
     'name_title.csv': 27,
     'genre.csv': 6,
     'genre_title.csv': 15,
-    'name.csv': 9
+    'name.csv': 9,
+    'job.csv': 5,
 }
 
 EXPECTED_ERRORS = {'title': [
