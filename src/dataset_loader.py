@@ -74,4 +74,6 @@ class DatasetLoader:
         sorted_tables.insert(2, models.GenreTitle)
         sorted_tables.insert(3, models.ProfessionModel)
         sorted_tables.insert(4, models.GenreModel)
+        sorted_tables.insert(5, models.JobModel)
+
         return sorted_tables
