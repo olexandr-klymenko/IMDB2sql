@@ -1,9 +1,8 @@
-from collections import defaultdict
-
-import pprint
 import csv
+import pprint
+from collections import defaultdict
 from os.path import join, getsize
-from typing import Iterator, Dict, List, Set, Tuple
+from typing import Iterator, Dict, Set, Tuple, Iterable
 
 from src import models
 from src.utils import overwrite_upper_line, get_int, get_null, get_csv_filename
@@ -45,8 +44,8 @@ class DatasetParser:
 
         self._write_extra_data(PROFESSION, NAME_PROFESSION, self.profession_names)
         self._write_extra_data(GENRE, GENRE_TITLE, self.genre_titles)
-        self._write_name_title()
-        self._write_jobs()
+        self._write_data(NAME_TITLE, self.name_title)
+        self._write_data(JOB, [(value, key) for key, value in self.jobs.items()])
 
         with open('errors.log', 'w') as ef:
             pprint.pprint(dict(self.errors), ef)
@@ -173,11 +172,12 @@ class DatasetParser:
                 data = dict(zip(headers, line))
                 yield data, (read_size / size) * 100
 
-    def _write_name_title(self):
-        with open(join(self.root, f'{NAME_TITLE}.{self.csv_extension}'), 'w') as dataset_out:
-            print(f"Dumping to f'{NAME_TITLE}.{self.csv_extension}' file ...")
+    def _write_data(self, table_name: str, data: Iterable[Tuple]):
+        file_name = join(self.root, f'{table_name}.{self.csv_extension}')
+        with open(file_name, 'w') as dataset_out:
+            print(f"Dumping to f'{file_name}' file ...")
             writer = csv.writer(dataset_out)
-            writer.writerows(self.name_title)
+            writer.writerows(data)
 
     def _write_extra_data(self, table: str, mapper: str, extra_data: Dict):
         table_filename = get_csv_filename(self.csv_extension, self.root, table)
@@ -192,12 +192,6 @@ class DatasetParser:
                     table_writer.writerow([idx, field])
                     for table_id in table_ids:
                         mapper_writer.writerow([idx, table_id])
-
-    def _write_jobs(self):
-        with open(join(self.root, f'{JOB}.{self.csv_extension}'), 'w') as dataset_out:
-            print(f"Dumping to f'{JOB}.{self.csv_extension}' file ...")
-            writer = csv.writer(dataset_out)
-            writer.writerows([(value, key) for key, value in self.jobs.items()])
 
 # TODO: Implement writing and reading to gzipped csv files
 # TODO: Implement string fields size validation

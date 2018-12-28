@@ -196,3 +196,6 @@ class Query(graphene.ObjectType):
 
 
 schema = graphene.Schema(query=Query)
+
+
+# TODO: Cover schema with tests

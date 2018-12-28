@@ -69,11 +69,12 @@ class DatasetLoader:
                 if table.name == data_set_name:
                     sorted_tables.append(table)
                     break
+
+        sorted_tables.append(models.JobModel)
         sorted_tables.insert(0, models.NameTitle)
         sorted_tables.insert(1, models.ProfessionName)
         sorted_tables.insert(2, models.GenreTitle)
         sorted_tables.insert(3, models.ProfessionModel)
         sorted_tables.insert(4, models.GenreModel)
-        sorted_tables.insert(5, models.JobModel)
 
         return sorted_tables
