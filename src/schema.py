@@ -74,6 +74,24 @@ class PrincipalType(ActiveSQLAlchemyObjectType):
     class Meta:
         model = models.PrincipalModel
 
+    job: models.JobModel = graphene.String()
+    name: models.NameModel = graphene.String()
+    title: models.TitleModel = graphene.String()
+
+    def resolve_name(self, _):
+        return self.name.primary_name
+
+    def resolve_title(self, _):
+        return self.title.primary_title
+
+    def resolve_job(self, _):
+        return self.job.job
+
+
+class JobType(ActiveSQLAlchemyObjectType):
+    class Meta:
+        model = models.JobModel
+
 
 class RatingType(ActiveSQLAlchemyObjectType):
     class Meta:
@@ -105,10 +123,16 @@ class Query(graphene.ObjectType):
                           limit=graphene.Int()
                           )
     common_names = graphene.List(lambda: NameType, titles=graphene.List(graphene.String))
-    principals = graphene.List(lambda: PrincipalType, limit=graphene.Int())
+    principals = graphene.List(lambda: PrincipalType,
+                               name_id=graphene.ID(),
+                               title_id=graphene.ID(),
+                               job=graphene.String(),
+                               limit=graphene.Int())
     ratings = graphene.List(lambda: RatingType, limit=graphene.Int())
     genres = graphene.List(GenreType, search=graphene.String())
     professions = graphene.List(ProfessionType, search=graphene.String())
+
+    jobs = graphene.List(lambda: JobType)
 
     def resolve_title(self, info, id):
         query = TitleType.get_query(info)
@@ -178,9 +202,17 @@ class Query(graphene.ObjectType):
         )
         return NameType.get_query(info).filter(models.NameModel.id.in_(name_ids))
 
-    def resolve_principals(self, info, limit=QUERY_LIMIT):
+    def resolve_principals(self, info, name_id=None, title_id=None, job=None, limit=QUERY_LIMIT):
         query = PrincipalType.get_query(info)
-        return query.limit(limit)
+        return query.filter(
+            models.PrincipalModel.name_id == name_id if name_id else True
+        ).filter(
+            models.PrincipalModel.title_id == title_id if title_id else True
+        ).join(
+            models.JobModel
+        ).filter(
+            models.JobModel.job == job if job else True
+        ).limit(limit)
 
     def resolve_ratings(self, info, limit=QUERY_LIMIT):
         query = RatingType.get_query(info)
@@ -193,6 +225,9 @@ class Query(graphene.ObjectType):
     def resolve_professions(self, info, search: str = None):
         query = ProfessionType.get_query(info)
         return query.filter(models.ProfessionModel.profession.ilike(search) if search else True)
+
+    def resolve_jobs(self, info):
+        return JobType.get_query(info)
 
 
 schema = graphene.Schema(query=Query)
