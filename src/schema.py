@@ -75,13 +75,13 @@ class PrincipalType(ActiveSQLAlchemyObjectType):
         model = models.PrincipalModel
 
     job: models.JobModel = graphene.String()
-    person: models.PersonModel = graphene.String()
-    film: models.FilmModel = graphene.String()
+    name: models.PersonModel = graphene.String()
+    title: models.FilmModel = graphene.String()
 
-    def resolve_person(self, _):
+    def resolve_name(self, _):
         return self.person.name
 
-    def resolve_film(self, _):
+    def resolve_title(self, _):
         return self.film.title
 
     def resolve_job(self, _):
