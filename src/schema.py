@@ -74,9 +74,12 @@ class PrincipalType(ActiveSQLAlchemyObjectType):
     class Meta:
         model = models.PrincipalModel
 
-    job: models.JobModel = graphene.String()
-    name: models.PersonModel = graphene.String()
-    title: models.FilmModel = graphene.String()
+    job = graphene.String()
+    name = graphene.String()
+    title = graphene.String()
+
+    person: models.PersonModel = PersonType()
+    film: models.FilmModel = FilmType()
 
     def resolve_name(self, _):
         return self.person.name
