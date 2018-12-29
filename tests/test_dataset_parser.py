@@ -13,17 +13,17 @@ DATASET_DIR = join(get_root_dir(), DATASETS_REL_PATH)
 EXPECTED_DATA = {
     'principal.csv': 10,
     'profession.csv': 6,
-    'profession_name.csv': 25,
+    'profession_person.csv': 25,
     'rating.csv': 8,
-    'title.csv': 8,
-    'name_title.csv': 27,
+    'film.csv': 8,
+    'person_film.csv': 27,
     'genre.csv': 6,
-    'genre_title.csv': 15,
-    'name.csv': 9,
+    'genre_film.csv': 15,
+    'person.csv': 9,
     'job.csv': 5,
 }
 
-EXPECTED_ERRORS = {'title': [
+EXPECTED_ERRORS = {'film': [
     {'tconst': 'tt0000009', 'titleType': 'movie', 'primaryTitle': 'Miss Jerry', 'originalTitle': 'Miss Jerry',
      'isAdult': '0', 'startYear': '1894', 'endYear': '\\N', 'runtimeMinutes': 'Romance'}]}
 

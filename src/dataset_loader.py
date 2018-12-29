@@ -34,11 +34,11 @@ class DatasetLoader:
         self._copy_table(models.JobModel.__tablename__)
         for table_name, _ in self.dataset_paths:
             self._copy_table(table_name)
-        self._copy_table(models.NameTitle.name)
+        self._copy_table(models.PersonFilm.name)
         self._copy_table(models.ProfessionModel.__tablename__)
-        self._copy_table(models.ProfessionName.name)
+        self._copy_table(models.ProfessionPerson.name)
         self._copy_table(models.GenreModel.__tablename__)
-        self._copy_table(models.GenreTitle.name)
+        self._copy_table(models.GenreFilm.name)
 
     def clean_up(self):
         tables = self._get_sorted_tables(self.metadata.sorted_tables)
@@ -71,9 +71,9 @@ class DatasetLoader:
                     break
 
         sorted_tables.append(models.JobModel)
-        sorted_tables.insert(0, models.NameTitle)
-        sorted_tables.insert(1, models.ProfessionName)
-        sorted_tables.insert(2, models.GenreTitle)
+        sorted_tables.insert(0, models.PersonFilm)
+        sorted_tables.insert(1, models.ProfessionPerson)
+        sorted_tables.insert(2, models.GenreFilm)
         sorted_tables.insert(3, models.ProfessionModel)
         sorted_tables.insert(4, models.GenreModel)
 

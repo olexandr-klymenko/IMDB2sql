@@ -38,34 +38,34 @@ class TestDataSetLoader(unittest.TestCase):
             path.unlink()
         cls.dataset_loader.clean_up()
 
-    def test_names(self):
-        name_model: models.NameModel = self.session.query(models.NameModel).filter(models.NameModel.id == 9).all()[0]
-        self.assertSetEqual(set([el.profession for el in name_model.professions]), {'actor', 'producer', 'soundtrack'})
-        self.assertSetEqual(set([title.id for title in name_model.titles]), {1, 2, 3, 4})
+    def test_person(self):
+        person_model: models.PersonModel = self.session.query(models.PersonModel).filter(models.PersonModel.id == 9).all()[0]
+        self.assertSetEqual(set([el.profession for el in person_model.professions]), {'actor', 'producer', 'soundtrack'})
+        self.assertSetEqual(set([film.id for film in person_model.films]), {1, 2, 3, 4})
 
-    def test_titles(self):
-        title_model: models.TitleModel = self.session.query(
-            models.TitleModel
-        ).filter(models.TitleModel.id == 2).all()[0]
-        self.assertEqual(title_model.primary_title, 'Le clown et ses chiens')
+    def test_film(self):
+        film_model: models.FilmModel = self.session.query(
+            models.FilmModel
+        ).filter(models.FilmModel.id == 2).all()[0]
+        self.assertEqual(film_model.title, 'Le clown et ses chiens')
         self.assertEqual(
-            set(name.id for name in title_model.names), {1, 6, 9}
+            set(person.id for person in film_model.persons), {1, 6, 9}
         )
-        self.assertSetEqual(set(genre.genre for genre in title_model.genres), {'Short', 'Animation'})
+        self.assertSetEqual(set(genre.genre for genre in film_model.genres), {'Short', 'Animation'})
 
     def test_principals(self):
         query: List[models.PrincipalModel] = self.session.query(
             models.PrincipalModel
-        ).filter(models.PrincipalModel.title_id == 1).all()
+        ).filter(models.PrincipalModel.film_id == 1).all()
         self.assertEqual(len(query), 4)
         for principal in query:
-            self.assertIn(principal.job.job, [el.profession for el in principal.name.professions])
+            self.assertIn(principal.job.job, [el.profession for el in principal.person.professions])
 
     def test_ratings(self):
         query: List[models.RatingModel] = self.session.query(
             models.RatingModel
-        ).filter(models.RatingModel.title_id == 1).all()
+        ).filter(models.RatingModel.film_id == 1).all()
         self.assertEqual(len(query), 1)
         self.assertEqual(query[0].average_rating, 5.8)
         self.assertEqual(query[0].num_votes, 1396)
-        self.assertEqual(query[0].title.id, 1)
+        self.assertEqual(query[0].film.id, 1)

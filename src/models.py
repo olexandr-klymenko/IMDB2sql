@@ -4,51 +4,51 @@ from sqlalchemy.orm import relationship
 
 Base = declarative_base(metadata=MetaData())
 
-NameTitle = Table('name_title',
-                  Base.metadata,
-                  Column('name_id', Integer, ForeignKey('name.id')),
-                  Column('title_id', Integer, ForeignKey('title.id'))
-                  )
-
-ProfessionName = Table('profession_name',
-                       Base.metadata,
-                       Column('profession_id', Integer, ForeignKey('profession.id')),
-                       Column('name_id', Integer, ForeignKey('name.id'))
-                       )
-
-GenreTitle = Table('genre_title',
+PersonFilm = Table('person_film',
                    Base.metadata,
-                   Column('genre_id', Integer, ForeignKey('genre.id')),
-                   Column('title_id', Integer, ForeignKey('title.id')),
+                   Column('person_id', Integer, ForeignKey('person.id')),
+                   Column('film_id', Integer, ForeignKey('film.id'))
                    )
 
+ProfessionPerson = Table('profession_person',
+                         Base.metadata,
+                         Column('profession_id', Integer, ForeignKey('profession.id')),
+                         Column('person_id', Integer, ForeignKey('person.id'))
+                         )
 
-class TitleModel(Base):
-    __tablename__ = 'title'
+GenreFilm = Table('genre_film',
+                  Base.metadata,
+                  Column('genre_id', Integer, ForeignKey('genre.id')),
+                  Column('film_id', Integer, ForeignKey('film.id')),
+                  )
+
+
+class FilmModel(Base):
+    __tablename__ = 'film'
 
     id = Column(Integer, primary_key=True)
-    primary_title = Column(String(450), index=True)
+    title = Column(String(450), index=True)
     is_adult = Column(Boolean)
     start_year = Column(Integer)
     runtime_minutes = Column(Integer)
 
-    names = relationship("NameModel", secondary=NameTitle, backref='title', cascade='delete,all')
-    principals = relationship("PrincipalModel", backref='title', cascade='delete,all')
-    rating = relationship("RatingModel", backref='title', uselist=False, cascade='delete,all')
-    genres = relationship("GenreModel", secondary=GenreTitle, backref='title', cascade='delete,all')
+    persons = relationship("PersonModel", secondary=PersonFilm, backref='film', cascade='delete,all')
+    principals = relationship("PrincipalModel", backref='film', cascade='delete,all')
+    rating = relationship("RatingModel", backref='film', uselist=False, cascade='delete,all')
+    genres = relationship("GenreModel", secondary=GenreFilm, backref='film', cascade='delete,all')
 
 
-class NameModel(Base):
-    __tablename__ = 'name'
+class PersonModel(Base):
+    __tablename__ = 'person'
 
     id = Column(Integer, primary_key=True)
-    primary_name = Column(String(120), index=True)
+    name = Column(String(120), index=True)
     birth_year = Column(Integer)
     death_year = Column(Integer, nullable=True)
 
-    titles = relationship("TitleModel", secondary=NameTitle, backref='name', cascade='delete,all')
-    professions = relationship("ProfessionModel", secondary=ProfessionName, backref='name', cascade='delete,all')
-    principals = relationship("PrincipalModel", backref='name', cascade='delete,all')
+    films = relationship("FilmModel", secondary=PersonFilm, backref='person', cascade='delete,all')
+    professions = relationship("ProfessionModel", secondary=ProfessionPerson, backref='person', cascade='delete,all')
+    principals = relationship("PrincipalModel", backref='person', cascade='delete,all')
 
 
 class JobModel(Base):
@@ -65,8 +65,8 @@ class PrincipalModel(Base):
 
     id = Column(Integer, primary_key=True)
 
-    title_id = Column(Integer, ForeignKey('title.id'))
-    name_id = Column(Integer, ForeignKey('name.id'))
+    film_id = Column(Integer, ForeignKey('film.id'))
+    person_id = Column(Integer, ForeignKey('person.id'))
     job_id = Column(Integer, ForeignKey('job.id'))
 
     job = relationship("JobModel", uselist=False)
@@ -79,7 +79,7 @@ class RatingModel(Base):
     average_rating = Column(Float)
     num_votes = Column(Integer)
 
-    title_id = Column(Integer, ForeignKey('title.id'))
+    film_id = Column(Integer, ForeignKey('film.id'))
 
 
 class ProfessionModel(Base):
@@ -88,7 +88,7 @@ class ProfessionModel(Base):
     id = Column(Integer, primary_key=True)
     profession = Column(String(50), nullable=False)
 
-    names = relationship("NameModel", secondary=ProfessionName, backref='profession', cascade='delete,all')
+    persons = relationship("PersonModel", secondary=ProfessionPerson, backref='profession', cascade='delete,all')
 
 
 class GenreModel(Base):
@@ -97,4 +97,4 @@ class GenreModel(Base):
     id = Column(Integer, primary_key=True)
     genre = Column(String(50), nullable=False)
 
-    titles = relationship("TitleModel", secondary=GenreTitle, backref='genre', cascade='delete,all')
+    films = relationship("FilmModel", secondary=GenreFilm, backref='genre', cascade='delete,all')

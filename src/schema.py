@@ -12,61 +12,61 @@ class ActiveSQLAlchemyObjectType(SQLAlchemyObjectType):
         abstract = True
 
 
-class TitleType(ActiveSQLAlchemyObjectType):
+class FilmType(ActiveSQLAlchemyObjectType):
     class Meta:
-        model = models.TitleModel
+        model = models.FilmModel
 
-    names = graphene.List(lambda: NameType,
-                          search=graphene.String(),
-                          profession=graphene.String()
-                          )
+    persons = graphene.List(lambda: PersonType,
+                            search=graphene.String(),
+                            profession=graphene.String()
+                            )
 
-    def resolve_names(self, info, search: str = None, profession=None):
-        query = NameType.get_query(info)
+    def resolve_persons(self, info, search: str = None, profession=None):
+        query = PersonType.get_query(info)
         return query.join(
-            models.ProfessionName
+            models.ProfessionPerson
         ).join(
             models.ProfessionModel
         ).join(
-            models.NameTitle
+            models.PersonFilm
         ).join(
-            models.TitleModel
+            models.FilmModel
         ).filter(
-            models.NameModel.primary_name.ilike(search) if search else True
+            models.PersonModel.name.ilike(search) if search else True
         ).filter(
             models.ProfessionModel.profession == profession if profession else True
         ).filter(
-            models.TitleModel.id == self.id
+            models.FilmModel.id == self.id
         )
 
 
-class NameType(ActiveSQLAlchemyObjectType):
+class PersonType(ActiveSQLAlchemyObjectType):
     class Meta:
-        model = models.NameModel
+        model = models.PersonModel
 
-    titles = graphene.List(lambda: TitleType,
-                           search=graphene.String(),
-                           genre=graphene.String(),
-                           period=graphene.List(graphene.Int))
+    films = graphene.List(lambda: FilmType,
+                          search=graphene.String(),
+                          genre=graphene.String(),
+                          period=graphene.List(graphene.Int))
 
-    def resolve_titles(self, info, search: str = None, genre: str = None, period=None):
-        query = TitleType.get_query(info)
+    def resolve_films(self, info, search: str = None, genre: str = None, period=None):
+        query = FilmType.get_query(info)
         return query.join(
-            models.GenreTitle
+            models.GenreFilm
         ).join(
             models.GenreModel
         ).join(
-            models.NameTitle
+            models.PersonFilm
         ).join(
-            models.NameModel
+            models.PersonModel
         ).filter(
-            models.TitleModel.primary_title.ilike(search) if search else True
+            models.FilmModel.title.ilike(search) if search else True
         ).filter(
             models.GenreModel.genre == genre if genre else True
         ).filter(
-            models.TitleModel.start_year.between(period[0], period[1]) if period else True
+            models.FilmModel.start_year.between(period[0], period[1]) if period else True
         ).filter(
-            models.NameModel.id == self.id
+            models.PersonModel.id == self.id
         )
 
 
@@ -75,14 +75,14 @@ class PrincipalType(ActiveSQLAlchemyObjectType):
         model = models.PrincipalModel
 
     job: models.JobModel = graphene.String()
-    name: models.NameModel = graphene.String()
-    title: models.TitleModel = graphene.String()
+    person: models.PersonModel = graphene.String()
+    film: models.FilmModel = graphene.String()
 
-    def resolve_name(self, _):
-        return self.name.primary_name
+    def resolve_person(self, _):
+        return self.person.name
 
-    def resolve_title(self, _):
-        return self.title.primary_title
+    def resolve_film(self, _):
+        return self.film.title
 
     def resolve_job(self, _):
         return self.job.job
@@ -109,23 +109,23 @@ class ProfessionType(ActiveSQLAlchemyObjectType):
 
 
 class Query(graphene.ObjectType):
-    title = graphene.List(lambda: TitleType, id=graphene.ID())
-    titles = graphene.List(lambda: TitleType,
-                           search=graphene.String(),
-                           genre=graphene.String(),
-                           period=graphene.List(graphene.Int),
-                           limit=graphene.Int())
-    common_titles = graphene.List(lambda: TitleType, names=graphene.List(graphene.String))
-    name = graphene.List(lambda: NameType, id=graphene.ID())
-    names = graphene.List(lambda: NameType,
+    film = graphene.List(lambda: FilmType, id=graphene.ID())
+    films = graphene.List(lambda: FilmType,
                           search=graphene.String(),
-                          profession=graphene.String(),
-                          limit=graphene.Int()
-                          )
-    common_names = graphene.List(lambda: NameType, titles=graphene.List(graphene.String))
+                          genre=graphene.String(),
+                          period=graphene.List(graphene.Int),
+                          limit=graphene.Int())
+    common_films = graphene.List(lambda: FilmType, names=graphene.List(graphene.String))
+    person = graphene.List(lambda: PersonType, id=graphene.ID())
+    persons = graphene.List(lambda: PersonType,
+                            search=graphene.String(),
+                            profession=graphene.String(),
+                            limit=graphene.Int()
+                            )
+    common_persons = graphene.List(lambda: PersonType, titles=graphene.List(graphene.String))
     principals = graphene.List(lambda: PrincipalType,
-                               name_id=graphene.ID(),
-                               title_id=graphene.ID(),
+                               person_id=graphene.ID(),
+                               film_id=graphene.ID(),
                                job=graphene.String(),
                                limit=graphene.Int())
     ratings = graphene.List(lambda: RatingType, limit=graphene.Int())
@@ -134,80 +134,80 @@ class Query(graphene.ObjectType):
 
     jobs = graphene.List(lambda: JobType)
 
-    def resolve_title(self, info, id):
-        query = TitleType.get_query(info)
-        return query.filter(models.TitleModel.id == id)
+    def resolve_film(self, info, id):
+        query = FilmType.get_query(info)
+        return query.filter(models.FilmModel.id == id)
 
-    def resolve_titles(self, info, search: str = None, genre: str = None, period=None, limit=QUERY_LIMIT):
-        query = TitleType.get_query(info)
+    def resolve_films(self, info, search: str = None, genre: str = None, period=None, limit=QUERY_LIMIT):
+        query = FilmType.get_query(info)
         return query.join(
-            models.GenreTitle
+            models.GenreFilm
         ).join(
             models.GenreModel
         ).filter(
-            models.TitleModel.primary_title.ilike(search) if search else True
+            models.FilmModel.title.ilike(search) if search else True
         ).filter(
             models.GenreModel.genre == genre if genre else True
         ).filter(
-            models.TitleModel.start_year.between(period[0], period[1]) if period else True
+            models.FilmModel.start_year.between(period[0], period[1]) if period else True
         ).limit(limit)
 
-    def resolve_common_titles(self, info, names):
-        name_query = NameType.get_query(info)
-        name_ids = [n.id for n in name_query.filter(models.NameModel.primary_name.in_(names)).all()]
+    def resolve_common_films(self, info, names):
+        name_query = PersonType.get_query(info)
+        person_ids = [n.id for n in name_query.filter(models.PersonModel.name.in_(names)).all()]
         session = info.context['session']
-        title_ids = session.query(
-            models.TitleModel.id
+        film_ids = session.query(
+            models.FilmModel.id
         ).join(
-            models.NameTitle
+            models.PersonFilm
         ).filter(
-            models.NameTitle.c.name_id.in_(name_ids)
+            models.PersonFilm.c.person_id.in_(person_ids)
         ).group_by(
-            models.TitleModel.id
+            models.FilmModel.id
         ).having(
-            count(models.TitleModel.id) == len(names)
+            count(models.FilmModel.id) == len(names)
         )
-        return TitleType.get_query(info).filter(models.TitleModel.id.in_(title_ids))
+        return FilmType.get_query(info).filter(models.FilmModel.id.in_(film_ids))
 
-    def resolve_name(self, info, id):
-        query = NameType.get_query(info)
-        return query.filter(models.NameModel.id == id)
+    def resolve_person(self, info, id):
+        query = PersonType.get_query(info)
+        return query.filter(models.PersonModel.id == id)
 
-    def resolve_names(self, info, search: str = None, profession=None, limit=QUERY_LIMIT):
-        query = NameType.get_query(info)
+    def resolve_persons(self, info, search: str = None, profession=None, limit=QUERY_LIMIT):
+        query = PersonType.get_query(info)
         return query.join(
-            models.ProfessionName
+            models.ProfessionPerson
         ).join(
             models.ProfessionModel
         ).filter(
-            models.NameModel.primary_name.ilike(search) if search else True
+            models.PersonModel.name.ilike(search) if search else True
         ).filter(
             models.ProfessionModel.profession == profession if profession else True
         ).limit(limit)
 
-    def resolve_common_names(self, info, titles):
-        title_query = TitleType.get_query(info)
-        title_ids = [t.id for t in title_query.filter(models.TitleModel.primary_title.in_(titles)).all()]
+    def resolve_common_persons(self, info, titles):
+        title_query = FilmType.get_query(info)
+        film_ids = [t.id for t in title_query.filter(models.FilmModel.title.in_(titles)).all()]
         session = info.context['session']
-        name_ids = session.query(
-            models.NameModel.id
+        person_ids = session.query(
+            models.PersonModel.id
         ).join(
-            models.NameTitle
+            models.PersonFilm
         ).filter(
-            models.NameTitle.c.title_id.in_(title_ids)
+            models.PersonFilm.c.film_id.in_(film_ids)
         ).group_by(
-            models.NameModel.id
+            models.PersonModel.id
         ).having(
-            count(models.NameModel.id) == len(titles)
+            count(models.PersonModel.id) == len(titles)
         )
-        return NameType.get_query(info).filter(models.NameModel.id.in_(name_ids))
+        return PersonType.get_query(info).filter(models.PersonModel.id.in_(person_ids))
 
-    def resolve_principals(self, info, name_id=None, title_id=None, job=None, limit=QUERY_LIMIT):
+    def resolve_principals(self, info, person_id=None, film_id=None, job=None, limit=QUERY_LIMIT):
         query = PrincipalType.get_query(info)
         return query.filter(
-            models.PrincipalModel.name_id == name_id if name_id else True
+            models.PrincipalModel.person_id == person_id if person_id else True
         ).filter(
-            models.PrincipalModel.title_id == title_id if title_id else True
+            models.PrincipalModel.film_id == film_id if film_id else True
         ).join(
             models.JobModel
         ).filter(

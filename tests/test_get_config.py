@@ -11,8 +11,8 @@ class TestGetConfig(unittest.TestCase):
         config_content = """
         data_sets_url: "https://datasets.imdbws.com"
         dataset_paths:
-            title: "name.basics.tsv.gz"
-            name: "name.basics.tsv.gz"
+            film: "name.basics.tsv.gz"
+            person: "name.basics.tsv.gz"
             principal: "title.principals.tsv.gz"
             rating: "title.ratings.tsv.gz"
         """
