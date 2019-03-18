@@ -1,11 +1,11 @@
 PyYAML
 beautifulsoup4
-Flask
-Flask-GraphQL
+flask
+flask-graphql
+flask-sqlalchemy
+flask-migrate
 graphene
 graphene-sqlalchemy
 psutil
 psycopg2-binary
 pytest
-validators
-SQLAlchemy

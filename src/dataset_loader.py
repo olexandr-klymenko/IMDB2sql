@@ -1,4 +1,3 @@
-from sqlalchemy import create_engine
 from typing import Dict, List, Tuple
 
 import src.models as models
@@ -13,18 +12,18 @@ class DatasetLoader:
         self.debug = cmd_args.debug
         self.quiet = cmd_args.quiet
 
-        self.dataset_paths: List[Tuple] = config['dataset_paths'].items()
+        self.dataset_paths: List[Tuple] = config["dataset_paths"].items()
         if self.resume is not None:
             idx = [el[0] for el in self.dataset_paths].index(self.resume)
             self.dataset_paths = list(self.dataset_paths)[idx:]
 
-        self.csv_extension = config['csv_extension']
+        self.csv_extension = config["csv_extension"]
         self.engine = None
         self.metadata = None
 
     def db_init(self):
         self.db_uri = self.db_uri
-        self.engine = create_engine(self.db_uri)
+        self.engine = models.db.create_engine(self.db_uri)
         self.metadata = models.Base.metadata
         self.metadata.create_all(bind=self.engine)
         self.metadata.reflect(bind=self.engine)
@@ -55,10 +54,14 @@ class DatasetLoader:
     def _copy_table(self, table_name):
         if not self.quiet:
             print(f"Copying data to '{table_name}' table ...")
-        with open(get_csv_filename(self.csv_extension, self.root, table_name), 'r') as csv_file:
-            conn = create_engine(self.db_uri, echo=self.debug).raw_connection()
+        with open(
+            get_csv_filename(self.csv_extension, self.root, table_name), "r"
+        ) as csv_file:
+            conn = models.db.create_engine(
+                self.db_uri, echo=self.debug
+            ).raw_connection()
             cursor = conn.cursor()
-            cmd = f'COPY {table_name} FROM STDIN WITH (FORMAT CSV, HEADER FALSE)'
+            cmd = f"COPY {table_name} FROM STDIN WITH (FORMAT CSV, HEADER FALSE)"
             cursor.copy_expert(cmd, csv_file)
             conn.commit()
 

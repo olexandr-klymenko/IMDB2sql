@@ -1,100 +1,122 @@
-from sqlalchemy import Column, String, Integer, Float, Boolean, ForeignKey, Table, MetaData
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
-
-Base = declarative_base(metadata=MetaData())
-
-PersonFilm = Table('person_film',
-                   Base.metadata,
-                   Column('person_id', Integer, ForeignKey('person.id')),
-                   Column('film_id', Integer, ForeignKey('film.id'))
-                   )
-
-ProfessionPerson = Table('profession_person',
-                         Base.metadata,
-                         Column('profession_id', Integer, ForeignKey('profession.id')),
-                         Column('person_id', Integer, ForeignKey('person.id'))
-                         )
-
-GenreFilm = Table('genre_film',
-                  Base.metadata,
-                  Column('genre_id', Integer, ForeignKey('genre.id')),
-                  Column('film_id', Integer, ForeignKey('film.id')),
-                  )
+from flask_sqlalchemy import SQLAlchemy
 
 
-class FilmModel(Base):
-    __tablename__ = 'film'
-
-    id = Column(Integer, primary_key=True)
-    title = Column(String(450), index=True)
-    is_adult = Column(Boolean)
-    start_year = Column(Integer)
-    runtime_minutes = Column(Integer)
-
-    persons = relationship("PersonModel", secondary=PersonFilm, backref='film', cascade='delete,all')
-    principals = relationship("PrincipalModel", backref='film', cascade='delete,all')
-    rating = relationship("RatingModel", backref='film', uselist=False, cascade='delete,all')
-    genres = relationship("GenreModel", secondary=GenreFilm, backref='film', cascade='delete,all')
+db = SQLAlchemy()
 
 
-class PersonModel(Base):
-    __tablename__ = 'person'
+PersonFilm = db.Table(
+    "person_film",
+    db.Column("person_id", db.Integer, db.ForeignKey("person.id")),
+    db.Column("film_id", db.Integer, db.ForeignKey("film.id")),
+)
 
-    id = Column(Integer, primary_key=True)
-    name = Column(String(120), index=True)
-    birth_year = Column(Integer)
-    death_year = Column(Integer, nullable=True)
+ProfessionPerson = db.Table(
+    "profession_person",
+    db.Column("profession_id", db.Integer, db.ForeignKey("profession.id")),
+    db.Column("person_id", db.Integer, db.ForeignKey("person.id")),
+)
 
-    films = relationship("FilmModel", secondary=PersonFilm, backref='person', cascade='delete,all')
-    professions = relationship("ProfessionModel", secondary=ProfessionPerson, backref='person', cascade='delete,all')
-    principals = relationship("PrincipalModel", backref='person', cascade='delete,all')
-
-
-class JobModel(Base):
-    __tablename__ = 'job'
-
-    id = Column(Integer, primary_key=True)
-    job = Column(String(20))
-
-    principals = relationship("PrincipalModel", cascade='delete,all')
+GenreFilm = db.Table(
+    "genre_film",
+    db.Column("genre_id", db.Integer, db.ForeignKey("genre.id")),
+    db.Column("film_id", db.Integer, db.ForeignKey("film.id")),
+)
 
 
-class PrincipalModel(Base):
-    __tablename__ = 'principal'
+class FilmModel(db.Model):
+    __tablename__ = "film"
 
-    id = Column(Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(450), index=True)
+    is_adult = db.Column(db.Boolean)
+    start_year = db.Column(db.Integer)
+    runtime_minutes = db.Column(db.Integer)
 
-    film_id = Column(Integer, ForeignKey('film.id'))
-    person_id = Column(Integer, ForeignKey('person.id'))
-    job_id = Column(Integer, ForeignKey('job.id'))
-
-    job = relationship("JobModel", uselist=False)
-
-
-class RatingModel(Base):
-    __tablename__ = 'rating'
-
-    id = Column(Integer, primary_key=True)
-    average_rating = Column(Float)
-    num_votes = Column(Integer)
-
-    film_id = Column(Integer, ForeignKey('film.id'))
-
-
-class ProfessionModel(Base):
-    __tablename__ = 'profession'
-
-    id = Column(Integer, primary_key=True)
-    profession = Column(String(50), nullable=False)
-
-    persons = relationship("PersonModel", secondary=ProfessionPerson, backref='profession', cascade='delete,all')
+    persons = db.relationship(
+        "PersonModel", secondary=PersonFilm, backref="film", cascade="delete,all"
+    )
+    principals = db.relationship("PrincipalModel", backref="film", cascade="delete,all")
+    rating = db.relationship(
+        "RatingModel", backref="film", uselist=False, cascade="delete,all"
+    )
+    genres = db.relationship(
+        "GenreModel", secondary=GenreFilm, backref="film", cascade="delete,all"
+    )
 
 
-class GenreModel(Base):
-    __tablename__ = 'genre'
+class PersonModel(db.Model):
+    __tablename__ = "person"
 
-    id = Column(Integer, primary_key=True)
-    genre = Column(String(50), nullable=False)
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(120), index=True)
+    birth_year = db.Column(db.Integer)
+    death_year = db.Column(db.Integer, nullable=True)
 
-    films = relationship("FilmModel", secondary=GenreFilm, backref='genre', cascade='delete,all')
+    films = db.relationship(
+        "FilmModel", secondary=PersonFilm, backref="person", cascade="delete,all"
+    )
+    professions = db.relationship(
+        "ProfessionModel",
+        secondary=ProfessionPerson,
+        backref="person",
+        cascade="delete,all",
+    )
+    principals = db.relationship(
+        "PrincipalModel", backref="person", cascade="delete,all"
+    )
+
+
+class JobModel(db.Model):
+    __tablename__ = "job"
+
+    id = db.Column(db.Integer, primary_key=True)
+    job = db.Column(db.String(20))
+
+    principals = db.relationship("PrincipalModel", cascade="delete,all")
+
+
+class PrincipalModel(db.Model):
+    __tablename__ = "principal"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    film_id = db.Column(db.Integer, db.ForeignKey("film.id"))
+    person_id = db.Column(db.Integer, db.ForeignKey("person.id"))
+    job_id = db.Column(db.Integer, db.ForeignKey("job.id"))
+
+    job = db.relationship("JobModel", uselist=False)
+
+
+class RatingModel(db.Model):
+    __tablename__ = "rating"
+
+    id = db.Column(db.Integer, primary_key=True)
+    average_rating = db.Column(db.Float)
+    num_votes = db.Column(db.Integer)
+
+    film_id = db.Column(db.Integer, db.ForeignKey("film.id"))
+
+
+class ProfessionModel(db.Model):
+    __tablename__ = "profession"
+
+    id = db.Column(db.Integer, primary_key=True)
+    profession = db.Column(db.String(50), nullable=False)
+
+    persons = db.relationship(
+        "PersonModel",
+        secondary=ProfessionPerson,
+        backref="profession",
+        cascade="delete,all",
+    )
+
+
+class GenreModel(db.Model):
+    __tablename__ = "genre"
+
+    id = db.Column(db.Integer, primary_key=True)
+    genre = db.Column(db.String(50), nullable=False)
+
+    films = db.relationship(
+        "FilmModel", secondary=GenreFilm, backref="genre", cascade="delete,all"
+    )

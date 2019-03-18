@@ -3,26 +3,24 @@ from os.path import join
 
 from flask import Flask
 from flask_graphql import GraphQLView
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, scoped_session
 
+from src.models import db
 from src.schema import schema
 from src.utils import get_config
 
 CONFIG = get_config(join(getcwd(), 'config', 'config.yml'))
 
-app = Flask(__name__)
-app.debug = True
 
-engine = create_engine(CONFIG['default_database_uri'])
-db_session = scoped_session(sessionmaker(autocommit=False, autoflush=False, bind=engine))
+def create_app(config=CONFIG):
+    app = Flask(__name__)
+    app.debug = True
+    app.config["SQLALCHEMY_DATABASE_URI"] = config['default_database_uri']
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = True
+    db.init_app(app)
 
-app.add_url_rule('/graphql',
-                 view_func=GraphQLView.as_view('graphql',
-                                               schema=schema,
-                                               graphiql=True,
-                                               get_context=lambda: {'session': db_session}))
-
-
-if __name__ == '__main__':
-    app.run()
+    app.add_url_rule('/graphql',
+                     view_func=GraphQLView.as_view('graphql',
+                                                   schema=schema,
+                                                   graphiql=True)
+                     )
+    return app

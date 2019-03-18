@@ -13,9 +13,9 @@ from typing import List, Dict, Union
 import yaml
 from bs4 import BeautifulSoup
 
-DATA_SET_FILENAME_PATTERN = re.compile('^/(.*).gz')
-CURSOR_UP_ONE = '\x1b[1A'
-ERASE_LINE = '\x1b[2K'
+DATA_SET_FILENAME_PATTERN = re.compile("^/(.*).gz")
+CURSOR_UP_ONE = "\x1b[1A"
+ERASE_LINE = "\x1b[2K"
 
 
 def get_config(config_path):
@@ -25,15 +25,19 @@ def get_config(config_path):
 
 def get_links(dataset_index_page_content: str, config: Dict) -> List:
     bs_obj = BeautifulSoup(dataset_index_page_content, "html.parser")
-    return [link.get('href') for link in bs_obj.find_all('a') if _filter_links(link, config)]
+    return [
+        link.get("href") for link in bs_obj.find_all("a") if _filter_links(link, config)
+    ]
 
 
 def _filter_links(link, config) -> bool:
-    dataset_files = [f"{el}.{config['dataset_file_ext']}" for el in config['dataset_paths'].values()]
-    return urllib.parse.urlparse(link.get('href')).path.strip("/") in dataset_files
+    dataset_files = [
+        f"{el}.{config['dataset_file_ext']}" for el in config["dataset_paths"].values()
+    ]
+    return urllib.parse.urlparse(link.get("href")).path.strip("/") in dataset_files
 
 
-DataSet = namedtuple('DataSet', ['url', 'gzipped', 'extracted'])
+DataSet = namedtuple("DataSet", ["url", "gzipped", "extracted"])
 
 
 class DataSetsHandler:
@@ -48,25 +52,27 @@ class DataSetsHandler:
             file_path_re = DATA_SET_FILENAME_PATTERN.search(path)
             if file_path_re is None:
                 raise Exception("Data set filename doesn't match")
-            gzipped = join(self.root, path.lstrip('/'))
+            gzipped = join(self.root, path.lstrip("/"))
             extracted = join(self.root, file_path_re.group(1))
-            self.data_sets.append(DataSet(gzipped=gzipped, extracted=extracted, url=url))
+            self.data_sets.append(
+                DataSet(gzipped=gzipped, extracted=extracted, url=url)
+            )
 
     def download(self):
-        print('Downloading ...')
+        print("Downloading ...")
         Pool().map(self._download_file, self.data_sets)
 
     @staticmethod
     def _download_file(data_set: DataSet):
-        print(f'{data_set.url} -> {data_set.gzipped} ...')
+        print(f"{data_set.url} -> {data_set.gzipped} ...")
         urllib.request.urlretrieve(url=data_set.url, filename=data_set.gzipped)
 
     def extract(self):
-        print('Extracting ...')
+        print("Extracting ...")
         for data_set in self.data_sets:
-            print(f'{data_set.gzipped} -> {data_set.extracted} ...')
+            print(f"{data_set.gzipped} -> {data_set.extracted} ...")
             with gzip.open(data_set.gzipped) as zf:
-                with open(data_set.extracted, 'w') as f:
+                with open(data_set.extracted, "w") as f:
                     for line in zf:
                         f.write(line.decode())
                     os.remove(data_set.gzipped)
@@ -106,12 +112,12 @@ def get_int(id_: str) -> Union[int, None]:
 
 
 def get_null(value: str):
-    if value.strip() not in ['\\N', '']:
+    if value.strip() not in ["\\N", ""]:
         return value
 
 
 def get_csv_filename(csv_extension, root, table_name):
-    return join(root, f'{table_name}.{csv_extension}')
+    return join(root, f"{table_name}.{csv_extension}")
 
 
 def get_table_object(table):
