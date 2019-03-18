@@ -8,4 +8,4 @@ dataset_paths:
 dataset_delimiter: "\t"
 default_database_uri: "postgresql+psycopg2://postgres@127.0.0.1:5433/postgres"
 csv_extension: "csv"
-film_filter: "movie"
+film_filter: ["movie", "tvSeries", "tvMiniSeries"]

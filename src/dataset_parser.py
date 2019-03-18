@@ -2,7 +2,7 @@ import csv
 import pprint
 from collections import defaultdict
 from os.path import join, getsize
-from typing import Iterator, Dict, Set, Tuple, Iterable
+from typing import Iterator, Dict, Set, Tuple, Iterable, List
 
 from src import models
 from src.utils import overwrite_upper_line, get_int, get_null, get_csv_filename
@@ -29,7 +29,7 @@ class DatasetParser:
         self.dataset_paths = config['dataset_paths'].items()
         self.delimiter = config['dataset_delimiter']
         self.csv_extension = config['csv_extension']
-        self.film_filter = config['film_filter']
+        self.film_filter: List = config['film_filter']
 
         self.profession_person = defaultdict(list)
         self.genre_film = defaultdict(list)
@@ -74,7 +74,7 @@ class DatasetParser:
     def _parse_film(self, dataset_path):
         for data, progress in self._parse_raw_dataset(dataset_path):
             try:
-                if data['titleType'] != self.film_filter:
+                if data['titleType'] not in self.film_filter:
                     continue
 
                 film_id = get_int(data['tconst'])
