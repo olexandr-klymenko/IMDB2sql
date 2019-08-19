@@ -9,3 +9,5 @@ graphene-sqlalchemy
 psutil
 psycopg2-binary
 pytest
+docker-compose
+validators

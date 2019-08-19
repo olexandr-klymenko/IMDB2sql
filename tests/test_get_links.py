@@ -10,7 +10,6 @@ CONFIG = get_config(join(get_root_dir(), CONFIG_REL_PATH))
 
 
 class TestGetLinks(unittest.TestCase):
-
     def setUp(self):
         self.dataset_index_page_content = """
 <html>
@@ -43,4 +42,4 @@ Documentation for these data files can be found on <a href=http://www.imdb.com/i
         self.assertTrue(len(set(are_valid_urls)) == 1)
         self.assertTrue(are_valid_urls[0])
 
-        self.assertTrue(len(links), len(self.config['dataset_paths']))
+        self.assertTrue(len(links), len(self.config["dataset_paths"]))

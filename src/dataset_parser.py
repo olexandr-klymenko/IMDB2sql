@@ -58,7 +58,7 @@ class DatasetParser:
     ):
         output_filename = get_csv_filename(self.csv_extension, self.root, table_name)
         with open(output_filename, "w") as dataset_out:
-            writer = csv.writer(dataset_out)
+            writer = self._get_writer(dataset_out)
             status_line = f"Parsing '{dataset_path}' into '{output_filename}' ..."
             if not self.quiet:
                 print(f"{self._get_progress_line(status_line, 0)} ...")
@@ -172,7 +172,7 @@ class DatasetParser:
         file_name = join(self.root, f"{table_name}.{self.csv_extension}")
         with open(file_name, "w") as dataset_out:
             print(f"Dumping to f'{file_name}' file ...")
-            writer = csv.writer(dataset_out)
+            writer = self._get_writer(dataset_out)
             writer.writerows(data)
 
     def _write_extra_data(self, table: str, mapper: str, extra_data: Dict):
@@ -181,13 +181,16 @@ class DatasetParser:
 
         with open(table_filename, "w") as table_file:
             print(f"Dumping to {table_filename} and {mapper_filename} files ...")
-            table_writer = csv.writer(table_file)
+            table_writer = self._get_writer(table_file)
             with open(mapper_filename, "w") as mapper_file:
-                mapper_writer = csv.writer(mapper_file)
+                mapper_writer = self._get_writer(mapper_file)
                 for idx, (field, table_ids) in enumerate(extra_data.items()):
                     table_writer.writerow([idx, field])
                     for table_id in table_ids:
                         mapper_writer.writerow([idx, table_id])
+
+    def _get_writer(self, file_obj):
+        return csv.writer(file_obj, delimiter=self.delimiter)
 
 
 # TODO: Implement writing and reading to gzipped csv files

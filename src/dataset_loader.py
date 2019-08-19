@@ -12,6 +12,8 @@ class DatasetLoader:
         self.debug = cmd_args.debug
         self.quiet = cmd_args.quiet
 
+        self.delimiter = config["dataset_delimiter"]
+
         self.dataset_paths: List[Tuple] = config["dataset_paths"].items()
         if self.resume is not None:
             idx = [el[0] for el in self.dataset_paths].index(self.resume)
@@ -19,12 +21,14 @@ class DatasetLoader:
 
         self.csv_extension = config["csv_extension"]
         self.engine = None
+        self.connection = None
         self.metadata = None
 
     def db_init(self):
         self.db_uri = self.db_uri
-        self.engine = models.db.create_engine(self.db_uri)
-        self.metadata = models.Base.metadata
+        self.engine = models.db.create_engine(self.db_uri, {})
+        self.connection = self.engine.raw_connection()
+        self.metadata = models.db.metadata
         self.metadata.create_all(bind=self.engine)
         self.metadata.reflect(bind=self.engine)
 
@@ -54,16 +58,12 @@ class DatasetLoader:
     def _copy_table(self, table_name):
         if not self.quiet:
             print(f"Copying data to '{table_name}' table ...")
-        with open(
-            get_csv_filename(self.csv_extension, self.root, table_name), "r"
-        ) as csv_file:
-            conn = models.db.create_engine(
-                self.db_uri, echo=self.debug
-            ).raw_connection()
-            cursor = conn.cursor()
-            cmd = f"COPY {table_name} FROM STDIN WITH (FORMAT CSV, HEADER FALSE)"
-            cursor.copy_expert(cmd, csv_file)
-            conn.commit()
+        with self.connection.cursor() as cursor:
+            with open(
+                get_csv_filename(self.csv_extension, self.root, table_name), "r"
+            ) as csv_file:
+                cursor.copy_from(csv_file, table_name, sep=self.delimiter)
+        self.connection.commit()
 
     def _get_sorted_tables(self, tables):
         sorted_tables = []

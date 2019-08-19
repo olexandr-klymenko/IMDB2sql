@@ -114,6 +114,7 @@ def get_int(id_: str) -> Union[int, None]:
 def get_null(value: str):
     if value.strip() not in ["\\N", ""]:
         return value
+    return "0"
 
 
 def get_csv_filename(csv_extension, root, table_name):
