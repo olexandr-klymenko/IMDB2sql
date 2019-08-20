@@ -1,7 +1,13 @@
 import csv
 import pprint
+import subprocess
 from collections import defaultdict
+from functools import partial
+from glob import glob
+from multiprocessing import Pool, cpu_count
+from os import remove
 from os.path import join, getsize
+from pathlib import Path
 from typing import Iterator, Dict, Set, Tuple, Iterable, List
 
 from src import models
@@ -46,6 +52,8 @@ class DatasetParser:
         self._write_extra_data(GENRE, GENRE_FILM, self.genre_film)
         self._write_data(PERSON_FILM, self.person_film)
         self._write_data(JOB, [(value, key) for key, value in self.jobs.items()])
+
+        self._split_all()
 
         with open("errors.log", "w") as ef:
             pprint.pprint(dict(self.errors), ef)
@@ -192,6 +200,30 @@ class DatasetParser:
     def _get_writer(self, file_obj):
         return csv.writer(file_obj, delimiter=self.delimiter)
 
+    def _split_all(self):
+        processes = cpu_count()
+        split_handler = partial(self._split_file, processes)
+        with Pool(processes) as pool:
+            pool.map(
+                split_handler, glob(str(Path(self.root, f"*.{self.csv_extension}")))
+            )
 
-# TODO: Implement writing and reading to gzipped csv files
-# TODO: Implement string fields size validation
+    @staticmethod
+    def _split_file(processes: int, path: str):
+        _path = Path(path)
+        chunks_dir = _path.parent / _path.stem
+        subprocess.call(["mkdir", "-p", str(chunks_dir)])
+        lines_count = (
+            int(subprocess.check_output(["wc", "-l", path]).split()[0]) // processes
+        ) + 1
+        subprocess.call(
+            [
+                "split",
+                path,
+                "-d",
+                "-l",
+                str(lines_count),
+                f"{str(chunks_dir / _path.name)}.",
+            ]
+        )
+        remove(path)

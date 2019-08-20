@@ -6,12 +6,11 @@ import tempfile
 import urllib.parse
 import urllib.request
 from collections import namedtuple
-from multiprocessing import Pool
+from multiprocessing import Pool, cpu_count
 from os.path import join, exists
 from typing import List, Dict, Union
 
 import yaml
-from bs4 import BeautifulSoup
 
 DATA_SET_FILENAME_PATTERN = re.compile("^/(.*).gz")
 CURSOR_UP_ONE = "\x1b[1A"
@@ -24,6 +23,8 @@ def get_config(config_path):
 
 
 def get_links(dataset_index_page_content: str, config: Dict) -> List:
+    from bs4 import BeautifulSoup
+
     bs_obj = BeautifulSoup(dataset_index_page_content, "html.parser")
     return [
         link.get("href") for link in bs_obj.find_all("a") if _filter_links(link, config)
@@ -69,13 +70,17 @@ class DataSetsHandler:
 
     def extract(self):
         print("Extracting ...")
-        for data_set in self.data_sets:
-            print(f"{data_set.gzipped} -> {data_set.extracted} ...")
-            with gzip.open(data_set.gzipped) as zf:
-                with open(data_set.extracted, "w") as f:
-                    for line in zf:
-                        f.write(line.decode())
-                    os.remove(data_set.gzipped)
+        with Pool(cpu_count()) as pool:
+            pool.map(self._extract_file, self.data_sets)
+
+    @staticmethod
+    def _extract_file(data_set: DataSet):
+        print(f"{data_set.gzipped} -> {data_set.extracted} ...")
+        with gzip.open(data_set.gzipped) as zf:
+            with open(data_set.extracted, "w") as f:
+                for line in zf:
+                    f.write(line.decode())
+                os.remove(data_set.gzipped)
 
     def cleanup(self):
         for data_set in self.data_sets:
