@@ -1,17 +1,17 @@
-import urllib.request
 from argparse import ArgumentParser
 from os import getcwd
 from os.path import join
 
-from src.dataset_loader import DatasetLoader
-from src.dataset_parser import DatasetParser
-from src.utils import get_config, get_links, DataSetsHandler
+from src.utils import get_config
 
 CONFIG = get_config(join(getcwd(), "config", "config.yml"))
 
 
 def main(cmd_args):
     if cmd_args.download or cmd_args.extract:
+        import urllib.request
+        from src.utils import get_config, get_links, DataSetsHandler
+
         with urllib.request.urlopen(CONFIG["data_sets_url"]) as response:
             imdb_page_content = response.read()
 
@@ -26,10 +26,14 @@ def main(cmd_args):
             handler.extract()
 
     if cmd_args.parse:
+        from src.dataset_parser import DatasetParser
+
         parser = DatasetParser(cmd_args, config=CONFIG)
         parser.parse_dataset()
 
     if cmd_args.load:
+        from src.dataset_loader import DatasetLoader
+
         loader = DatasetLoader(cmd_args, config=CONFIG)
         loader.db_init()
         loader.load_dataset()

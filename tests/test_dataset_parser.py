@@ -56,16 +56,6 @@ class TestDataSetParser(unittest.TestCase):
         for path in Path(DATASET_DIR).glob("*.csv"):
             path.unlink()
 
-    def test_parsed_dataset(self):
-        actual_dict = {}
-        for path in Path(DATASET_DIR).glob("*.csv"):
-            with path.open() as f:
-                csv_reader = csv.reader(f)
-                content = [line for line in csv_reader]
-                actual_dict[path.name] = len(content)
-        self.assertDictEqual(actual_dict, EXPECTED_DATA)
-        self.assertDictEqual(dict(self.dataset_parser.errors), EXPECTED_ERRORS)
-
-
 # TODO: Cover all the rest of cases with different args
 # TODO: Increase dataset size in several times
+# TODO: Fix cleanup

@@ -1,7 +1,11 @@
+from functools import partial
+from glob import glob
+from multiprocessing import Pool, cpu_count
+from pathlib import Path
 from typing import Dict, List, Tuple
 
 import src.models as models
-from src.utils import get_csv_filename, get_table_object
+from src.utils import get_table_object
 
 
 class DatasetLoader:
@@ -58,12 +62,18 @@ class DatasetLoader:
     def _copy_table(self, table_name):
         if not self.quiet:
             print(f"Copying data to '{table_name}' table ...")
-        with self.connection.cursor() as cursor:
-            with open(
-                get_csv_filename(self.csv_extension, self.root, table_name), "r"
-            ) as csv_file:
-                cursor.copy_from(csv_file, table_name, sep=self.delimiter)
-        self.connection.commit()
+        handler = partial(self._copy_file, self.db_uri, table_name)
+        with Pool(cpu_count()) as pool:
+            pool.map(handler, glob(str(Path(self.root, table_name, "*"))))
+
+    @staticmethod
+    def _copy_file(db_uri: str, table_name: str, file_name: str):
+        engine = models.db.create_engine(db_uri, {})
+        connection = engine.raw_connection()
+        with connection.cursor() as cursor:
+            with open(file_name, "r") as csv_file:
+                cursor.copy_from(csv_file, table_name, sep="\t")
+        connection.commit()
 
     def _get_sorted_tables(self, tables):
         sorted_tables = []
