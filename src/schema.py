@@ -165,19 +165,19 @@ class Query(graphene.ObjectType):
         )
 
     def resolve_common_films(self, info, names):
-        name_query = PersonType.get_query(info)
         person_ids = [
-            n.id for n in name_query.filter(models.PersonModel.name.in_(names)).all()
+            n.id
+            for n in PersonType.get_query(info)
+            .filter(models.PersonModel.name.in_(names))
+            .all()
         ]
-        session = info.context["session"]
-        film_ids = (
-            session.query(models.FilmModel.id)
+        return (
+            FilmType.get_query(info)
             .join(models.PersonFilm)
             .filter(models.PersonFilm.c.person_id.in_(person_ids))
             .group_by(models.FilmModel.id)
             .having(count(models.FilmModel.id) == len(names))
         )
-        return FilmType.get_query(info).filter(models.FilmModel.id.in_(film_ids))
 
     def resolve_person(self, info, id):
         query = PersonType.get_query(info)
@@ -198,19 +198,19 @@ class Query(graphene.ObjectType):
         )
 
     def resolve_common_persons(self, info, titles):
-        title_query = FilmType.get_query(info)
         film_ids = [
-            t.id for t in title_query.filter(models.FilmModel.title.in_(titles)).all()
+            t.id
+            for t in FilmType.get_query(info)
+            .filter(models.FilmModel.title.in_(titles))
+            .all()
         ]
-        session = info.context["session"]
-        person_ids = (
-            session.query(models.PersonModel.id)
+        return (
+            PersonType.get_query(info)
             .join(models.PersonFilm)
             .filter(models.PersonFilm.c.film_id.in_(film_ids))
             .group_by(models.PersonModel.id)
             .having(count(models.PersonModel.id) == len(titles))
         )
-        return PersonType.get_query(info).filter(models.PersonModel.id.in_(person_ids))
 
     def resolve_principals(
         self, info, person_id=None, film_id=None, job=None, limit=QUERY_LIMIT
