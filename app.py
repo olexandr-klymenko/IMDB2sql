@@ -1,7 +1,7 @@
 from os import getcwd
 from os.path import join
 
-from flask import Flask
+from flask import Flask, render_template
 from flask_graphql import GraphQLView
 
 from src.models import db
@@ -12,7 +12,7 @@ CONFIG = get_config(join(getcwd(), "config", "config.yml"))
 
 
 def create_app(config=CONFIG):
-    app = Flask(__name__)
+    app = Flask(__name__, template_folder="src/templates", static_folder="src/static")
     app.debug = True
     app.config["SQLALCHEMY_DATABASE_URI"] = config["default_database_uri"]
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = True
@@ -22,6 +22,10 @@ def create_app(config=CONFIG):
         "/graphql",
         view_func=GraphQLView.as_view("graphql", schema=schema, graphiql=True),
     )
+
+    @app.route("/")
+    def index():
+        return render_template("index.html")
     return app
 
 
