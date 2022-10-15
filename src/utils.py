@@ -120,21 +120,3 @@ def get_null(value: str):
     if value.strip() not in ["\\N", ""]:
         return value
     return "0"
-
-
-def get_csv_filename(csv_extension, root, table_name):
-    return join(root, f"{table_name}.{csv_extension}")
-
-
-def get_table_object(table):
-    """
-    Returns Table object
-    :param table: Union[Table, Model]
-    :return: Table object
-    """
-    try:
-        _ = table.delete
-    except AttributeError:
-        return table.__table__
-    else:
-        return table

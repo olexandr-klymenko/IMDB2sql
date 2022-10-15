@@ -5,7 +5,20 @@ from pathlib import Path
 from typing import Dict, List, Tuple
 
 import src.models as models
-from src.utils import get_table_object
+
+
+def get_table_object(table):
+    """
+    Returns Table object
+    :param table: Union[Table, Model]
+    :return: Table object
+    """
+    try:
+        _ = table.delete
+    except AttributeError:
+        return table.__table__
+    else:
+        return table
 
 
 class DatasetLoader:
@@ -73,7 +86,6 @@ class DatasetLoader:
             with open(file_name, "r") as csv_file:
                 cursor.copy_from(csv_file, table_name, sep="\t")
         connection.commit()
-
     def _get_sorted_tables(self, tables):
         sorted_tables = []
         for data_set_name in reversed([el[0] for el in self.dataset_paths]):
@@ -90,3 +102,5 @@ class DatasetLoader:
         sorted_tables.insert(4, models.GenreModel)
 
         return sorted_tables
+
+

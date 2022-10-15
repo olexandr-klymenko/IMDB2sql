@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Iterator, Dict, Set, Tuple, Iterable, List
 
 from src import models
-from src.utils import overwrite_upper_line, get_int, get_null, get_csv_filename
+from src.utils import overwrite_upper_line, get_int, get_null
 
 FILM = models.FilmModel.__tablename__
 PERSON = models.PersonModel.__tablename__
@@ -25,7 +25,12 @@ GENRE_FILM = models.GenreFilm.name
 JOB = models.JobModel.__tablename__
 
 
+def get_csv_filename(csv_extension, root, table_name):
+    return join(root, f"{table_name}.{csv_extension}")
+
+
 class DatasetParser:
+
     def __init__(self, cmd_args, config: Dict):
         self.root = cmd_args.root
         self.errors = defaultdict(list)
@@ -62,7 +67,7 @@ class DatasetParser:
         return getattr(self, f"_parse_{table_name}")
 
     def _write_normalized_dataset(
-        self, dataset_iter: Iterator, dataset_path: str, table_name: str
+            self, dataset_iter: Iterator, dataset_path: str, table_name: str
     ):
         output_filename = get_csv_filename(self.csv_extension, self.root, table_name)
         with open(output_filename, "w") as dataset_out:
@@ -206,15 +211,14 @@ class DatasetParser:
             pool.map(
                 split_worker, glob(str(Path(self.root, f"*.{self.csv_extension}")))
             )
-
     @staticmethod
     def _split_file(processes: int, path: str):
         _path = Path(path)
         chunks_dir = _path.parent / _path.stem
         subprocess.call(["mkdir", "-p", str(chunks_dir)])
         lines_count = (
-            int(subprocess.check_output(["wc", "-l", path]).split()[0]) // processes
-        ) + 1
+                              int(subprocess.check_output(["wc", "-l", path]).split()[0]) // processes
+                      ) + 1
         subprocess.call(
             [
                 "split",
@@ -226,3 +230,5 @@ class DatasetParser:
             ]
         )
         remove(path)
+
+

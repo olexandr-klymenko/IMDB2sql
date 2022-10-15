@@ -66,8 +66,11 @@ if __name__ == "__main__":
     print(args)
     main(args)
 
-# TODO:  implement click for better cli experience
+# TODO: implement click for better cli experience
 # TODO: improve README.md
 # TODO: implement alembic, invoke
 # TODO: investigate polling db operation to get progress
 # TODO: investigate parallel inserting data into db to speedup
+# TODO: implement pytest instead of UnitTest
+# TODO: refactor DataSetsHandler
+# TODO: implement rich (colored text)
