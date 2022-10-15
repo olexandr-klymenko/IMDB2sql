@@ -49,6 +49,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Content-Disposition", f"attachment; filename={self.path[1:]}")
         self.send_header("Content-type", "application/x-gzip")
+        self.send_header("Content-Length", "1000")
         self.end_headers()
         self.wfile.write(_generate_gzipped_tvs_file_stream())
 

@@ -2,7 +2,7 @@ from argparse import ArgumentParser
 from os import getcwd
 from os.path import join
 
-from src.utils import get_config
+from src.utils import get_config, get_data_sets
 
 CONFIG = get_config(join(getcwd(), "config", "config.yml"))
 
@@ -10,13 +10,16 @@ CONFIG = get_config(join(getcwd(), "config", "config.yml"))
 def main(cmd_args):
     if cmd_args.download or cmd_args.extract:
         import urllib.request
-        from src.utils import get_config, get_links, DataSetsHandler
+        from src.utils import get_config, get_links
+        from src.dataset_handler import DataSetsHandler
 
         with urllib.request.urlopen(CONFIG["data_sets_url"]) as response:
             imdb_page_content = response.read()
 
+        data_sets = get_data_sets(urls=get_links(imdb_page_content, CONFIG), root=cmd_args.root)
+
         handler = DataSetsHandler(
-            get_links(imdb_page_content, CONFIG), root=cmd_args.root
+            data_sets
         )
 
         if cmd_args.download:
@@ -67,10 +70,7 @@ if __name__ == "__main__":
     main(args)
 
 # TODO: implement click for better cli experience
-# TODO: improve README.md
 # TODO: implement alembic, invoke
 # TODO: investigate polling db operation to get progress
-# TODO: investigate parallel inserting data into db to speedup
 # TODO: implement pytest instead of UnitTest
-# TODO: refactor DataSetsHandler
 # TODO: implement rich (colored text)

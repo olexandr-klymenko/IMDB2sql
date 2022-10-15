@@ -86,6 +86,7 @@ class DatasetLoader:
             with open(file_name, "r") as csv_file:
                 cursor.copy_from(csv_file, table_name, sep="\t")
         connection.commit()
+
     def _get_sorted_tables(self, tables):
         sorted_tables = []
         for data_set_name in reversed([el[0] for el in self.dataset_paths]):
@@ -102,5 +103,3 @@ class DatasetLoader:
         sorted_tables.insert(4, models.GenreModel)
 
         return sorted_tables
-
-

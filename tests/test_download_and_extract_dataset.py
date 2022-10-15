@@ -1,7 +1,8 @@
 import threading
 import unittest
 
-from src.utils import DataSetsHandler
+from src.utils import get_data_sets
+from src.dataset_handler import DataSetsHandler
 from tests.utils import (
     FakeHTTPServer,
     TEST_HTTP_PORT,
@@ -17,9 +18,10 @@ class TestDownloadAndExtractDataset(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.downloader = DataSetsHandler(
-            [f"http://127.0.0.1:{TEST_HTTP_PORT}/{TEST_FILENAME}"]
+        data_sets = get_data_sets(
+            urls=[f"http://127.0.0.1:{TEST_HTTP_PORT}/{TEST_FILENAME}"]
         )
+        cls.downloader = DataSetsHandler(data_sets)
         cls.server = FakeHTTPServer()
         thread = threading.Thread(target=cls.server.serve_forever)
         thread.start()
@@ -38,7 +40,8 @@ class TestDownloadAndExtractDataset(unittest.TestCase):
                 self.assertEqual(TEST_TVS_DATA, f.read().strip("\n"))
 
     def test_invalid_data_set_filename(self):
-        with self.assertRaises(Exception):
-            DataSetsHandler(
+        with self.assertRaises(ValueError):
+            data_sets = get_data_sets(
                 [f"http://127.0.0.1:{TEST_HTTP_PORT}/{TEST_FILENAME_INVALID}"]
             )
+            DataSetsHandler(data_sets)

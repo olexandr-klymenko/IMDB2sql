@@ -1,13 +1,9 @@
-import gzip
-import os
+from dataclasses import dataclass
 import re
 import sys
 import tempfile
 import urllib.parse
-import urllib.request
-from collections import namedtuple
-from multiprocessing import Pool, cpu_count
-from os.path import join, exists
+from os.path import join
 from typing import List, Dict, Union
 
 import yaml
@@ -38,57 +34,24 @@ def _filter_links(link, config) -> bool:
     return urllib.parse.urlparse(link.get("href")).path.strip("/") in dataset_files
 
 
-DataSet = namedtuple("DataSet", ["url", "gzipped", "extracted"])
+@dataclass
+class DataSet:
+    url: str
+    gzipped: str
+    extracted: str
 
 
-class DataSetsHandler:
-    def __init__(self, urls, root=None):
-        self.root = root or tempfile.gettempdir()
-        self.data_sets: List[DataSet] = []
-        self._init_data_sets(urls)
-
-    def _init_data_sets(self, urls):
-        for url in urls:
-            path = urllib.parse.urlparse(url).path
-            file_path_re = DATA_SET_FILENAME_PATTERN.search(path)
-            if file_path_re is None:
-                raise ValueError("Data set filename doesn't match")
-            gzipped = join(self.root, path.lstrip("/"))
-            extracted = join(self.root, file_path_re.group(1))
-            self.data_sets.append(
-                DataSet(gzipped=gzipped, extracted=extracted, url=url)
-            )
-
-    def download(self):
-        print("Downloading ...")
-        Pool().map(self._download_file, self.data_sets)
-
-    @staticmethod
-    def _download_file(data_set: DataSet):
-        print(f"{data_set.url} -> {data_set.gzipped} ...")
-        urllib.request.urlretrieve(url=data_set.url, filename=data_set.gzipped)
-
-    def extract(self):
-        print("Extracting ...")
-        with Pool(cpu_count()) as pool:
-            pool.map(self._extract_file, self.data_sets)
-
-    @staticmethod
-    def _extract_file(data_set: DataSet):
-        print(f"{data_set.gzipped} -> {data_set.extracted} ...")
-        with gzip.open(data_set.gzipped) as zf:
-            with open(data_set.extracted, "w") as f:
-                for line in zf:
-                    f.write(line.decode())
-                os.remove(data_set.gzipped)
-
-    def cleanup(self):
-        for data_set in self.data_sets:
-            if exists(data_set.gzipped):
-                os.remove(data_set.gzipped)
-
-            if exists(data_set.extracted):
-                os.remove(data_set.extracted)
+def get_data_sets(urls, root=tempfile.gettempdir()) -> List[DataSet]:
+    _ret_val = []
+    for url in urls:
+        path = urllib.parse.urlparse(url).path
+        file_path_re = DATA_SET_FILENAME_PATTERN.search(path)
+        if file_path_re is None:
+            raise ValueError("Data set filename doesn't match")
+        gzipped = join(root, path.lstrip("/"))
+        extracted = join(root, file_path_re.group(1))
+        _ret_val.append(DataSet(gzipped=gzipped, extracted=extracted, url=url))
+    return _ret_val
 
 
 def overwrite_upper_line(content: str, quiet=False):

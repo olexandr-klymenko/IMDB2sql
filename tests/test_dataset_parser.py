@@ -56,6 +56,7 @@ class TestDataSetParser(unittest.TestCase):
         for path in Path(DATASET_DIR).glob("*.csv"):
             path.unlink()
 
+
 # TODO: Cover all the rest of cases with different args
 # TODO: Increase dataset size in several times
 # TODO: Fix cleanup
