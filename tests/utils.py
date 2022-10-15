@@ -44,7 +44,6 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self._handle_success()
         else:
             self.send_error(404)
-        return
 
     def _handle_success(self):
         self.send_response(200)

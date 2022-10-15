@@ -29,8 +29,7 @@ class DatasetLoader:
         self.metadata = None
 
     def db_init(self):
-        self.db_uri = self.db_uri
-        self.engine = models.db.create_engine(self.db_uri, {})
+        self.engine = models.db.create_engine(self.db_uri)
         self.connection = self.engine.raw_connection()
         self.metadata = models.db.metadata
         self.metadata.create_all(bind=self.engine)
@@ -68,7 +67,7 @@ class DatasetLoader:
 
     @staticmethod
     def _copy_file(db_uri: str, table_name: str, file_name: str):
-        engine = models.db.create_engine(db_uri, {})
+        engine = models.db.create_engine(db_uri)
         connection = engine.raw_connection()
         with connection.cursor() as cursor:
             with open(file_name, "r") as csv_file:

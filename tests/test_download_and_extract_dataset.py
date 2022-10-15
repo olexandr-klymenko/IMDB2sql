@@ -12,8 +12,8 @@ from tests.utils import (
 
 
 class TestDownloadAndExtractDataset(unittest.TestCase):
-    server: FakeHTTPServer = None
-    downloader: DataSetsHandler = None
+    server: FakeHTTPServer
+    downloader: DataSetsHandler
 
     @classmethod
     def setUpClass(cls):

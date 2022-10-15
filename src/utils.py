@@ -19,7 +19,7 @@ ERASE_LINE = "\x1b[2K"
 
 def get_config(config_path):
     with open(config_path) as cfg:
-        return yaml.load(cfg)
+        return yaml.load(cfg, Loader=yaml.FullLoader)
 
 
 def get_links(dataset_index_page_content: str, config: Dict) -> List:
@@ -52,7 +52,7 @@ class DataSetsHandler:
             path = urllib.parse.urlparse(url).path
             file_path_re = DATA_SET_FILENAME_PATTERN.search(path)
             if file_path_re is None:
-                raise Exception("Data set filename doesn't match")
+                raise ValueError("Data set filename doesn't match")
             gzipped = join(self.root, path.lstrip("/"))
             extracted = join(self.root, file_path_re.group(1))
             self.data_sets.append(

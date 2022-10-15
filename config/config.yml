@@ -6,6 +6,6 @@ dataset_paths:
   principal: "title.principals.tsv"
   rating: "title.ratings.tsv"
 dataset_delimiter: "\t"
-default_database_uri: "postgresql+psycopg2://postgres@127.0.0.1:5433/postgres"
+default_database_uri: "postgresql://postgres:example@127.0.0.1:5433/postgres"
 csv_extension: "csv"
 film_filter: ["movie", "tvSeries", "tvMiniSeries"]

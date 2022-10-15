@@ -33,14 +33,14 @@ class FilmModel(db.Model):
     runtime_minutes = db.Column(db.Integer)
 
     persons = db.relationship(
-        "PersonModel", secondary=PersonFilm, backref="film", cascade="delete,all"
+        "PersonModel", secondary=PersonFilm, cascade="delete,all", back_populates="films"
     )
     principals = db.relationship("PrincipalModel", backref="film", cascade="delete,all")
     rating = db.relationship(
         "RatingModel", backref="film", uselist=False, cascade="delete,all"
     )
     genres = db.relationship(
-        "GenreModel", secondary=GenreFilm, backref="film", cascade="delete,all"
+        "GenreModel", secondary=GenreFilm, cascade="delete,all", back_populates="films"
     )
 
 
@@ -53,13 +53,13 @@ class PersonModel(db.Model):
     death_year = db.Column(db.Integer, nullable=True)
 
     films = db.relationship(
-        "FilmModel", secondary=PersonFilm, backref="person", cascade="delete,all"
+        "FilmModel", secondary=PersonFilm, cascade="delete,all", back_populates="persons"
     )
     professions = db.relationship(
         "ProfessionModel",
         secondary=ProfessionPerson,
-        backref="person",
         cascade="delete,all",
+        back_populates="persons",
     )
     principals = db.relationship(
         "PrincipalModel", backref="person", cascade="delete,all"
@@ -72,7 +72,7 @@ class JobModel(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     job = db.Column(db.String(20))
 
-    principals = db.relationship("PrincipalModel", cascade="delete,all")
+    principals = db.relationship("PrincipalModel", cascade="delete,all", back_populates="job")
 
 
 class PrincipalModel(db.Model):
@@ -84,7 +84,7 @@ class PrincipalModel(db.Model):
     person_id = db.Column(db.Integer, db.ForeignKey("person.id"))
     job_id = db.Column(db.Integer, db.ForeignKey("job.id"))
 
-    job = db.relationship("JobModel", uselist=False)
+    job = db.relationship("JobModel", uselist=False, back_populates="principals")
 
 
 class RatingModel(db.Model):
@@ -106,8 +106,8 @@ class ProfessionModel(db.Model):
     persons = db.relationship(
         "PersonModel",
         secondary=ProfessionPerson,
-        backref="profession",
         cascade="delete,all",
+        back_populates="professions",
     )
 
 
@@ -118,5 +118,5 @@ class GenreModel(db.Model):
     genre = db.Column(db.String(50), nullable=False)
 
     films = db.relationship(
-        "FilmModel", secondary=GenreFilm, backref="genre", cascade="delete,all"
+        "FilmModel", secondary=GenreFilm, cascade="delete,all", back_populates="genres"
     )

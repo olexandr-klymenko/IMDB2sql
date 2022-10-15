@@ -20,7 +20,7 @@ class TestDataSetLoader(unittest.TestCase):
     def setUpClass(cls):
         cmd_args = mock
         cmd_args.debug = False
-        cmd_args.dburi = "postgresql+psycopg2://postgres@127.0.0.1:5434/postgres"
+        cmd_args.dburi = "postgresql+psycopg2://postgres:example@127.0.0.1:5434/postgres"
         cmd_args.root = DATASET_DIR
         cmd_args.resume = None
         cmd_args.quiet = True
