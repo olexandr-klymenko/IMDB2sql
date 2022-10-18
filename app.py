@@ -1,5 +1,5 @@
 from os import getcwd
-from os.path import join
+from pathlib import Path
 
 from flask import Flask, render_template
 from flask_graphql import GraphQLView
@@ -8,7 +8,7 @@ from src.models import db
 from src.schema import schema
 from src.utils import get_config
 
-CONFIG = get_config(join(getcwd(), "config", "config.yml"))
+CONFIG = get_config(Path(Path(getcwd()) / "config" / "config.yml"))
 
 
 def create_app(config=CONFIG):
@@ -26,6 +26,7 @@ def create_app(config=CONFIG):
     @app.route("/")
     def index():
         return render_template("index.html")
+
     return app
 
 

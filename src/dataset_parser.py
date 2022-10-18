@@ -6,7 +6,7 @@ from functools import partial
 from glob import glob
 from multiprocessing import Pool, cpu_count
 from os import remove
-from os.path import join, getsize
+from os.path import getsize
 from pathlib import Path
 from typing import Iterator, Dict, Set, Tuple, Iterable, List
 
@@ -25,13 +25,13 @@ GENRE_FILM = models.GenreFilm.name
 JOB = models.JobModel.__tablename__
 
 
-def get_csv_filename(csv_extension, root, table_name):
-    return join(root, f"{table_name}.{csv_extension}")
+def get_csv_filename(csv_extension: str, root: Path, table_name: str):
+    return root / f"{table_name}.{csv_extension}"
 
 
 class DatasetParser:
     def __init__(self, cmd_args, config: Dict):
-        self.root = cmd_args.root
+        self.root = Path(cmd_args.root)
         self.errors = defaultdict(list)
         self.indices = defaultdict(set)
         self.debug = cmd_args.debug
@@ -49,7 +49,7 @@ class DatasetParser:
     def parse_dataset(self):
         for table_name, dataset_path in self.dataset_paths:
             parse_handler = self._get_parse_handler(table_name)
-            dataset_iter = parse_handler(join(self.root, dataset_path))
+            dataset_iter = parse_handler(Path(self.root / dataset_path))
             self._write_normalized_dataset(dataset_iter, dataset_path, table_name)
 
         self._write_extra_data(PROFESSION, PERSON_PROFESSION, self.profession_person)
@@ -181,7 +181,7 @@ class DatasetParser:
                 yield data, (read_size / size) * 100
 
     def _write_data(self, table_name: str, data: Iterable[Tuple]):
-        file_name = join(self.root, f"{table_name}.{self.csv_extension}")
+        file_name = Path(self.root / f"{table_name}.{self.csv_extension}")
         with open(file_name, "w") as dataset_out:
             print(f"Dumping to f'{file_name}' file ...")
             writer = self._get_csv_writer(dataset_out)

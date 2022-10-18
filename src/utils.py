@@ -3,7 +3,7 @@ import re
 import sys
 import tempfile
 import urllib.parse
-from os.path import join
+from pathlib import Path
 from typing import List, Dict, Union
 
 import yaml
@@ -37,19 +37,22 @@ def _filter_links(link, config) -> bool:
 @dataclass
 class DataSet:
     url: str
-    gzipped: str
-    extracted: str
+    gzipped: Path
+    extracted: Path
 
 
-def get_data_sets(urls, root=tempfile.gettempdir()) -> List[DataSet]:
+def get_data_sets(
+    urls: List[str], root: Path = Path(tempfile.gettempdir())
+) -> List[DataSet]:
     _ret_val = []
     for url in urls:
         path = urllib.parse.urlparse(url).path
-        file_path_re = DATA_SET_FILENAME_PATTERN.search(path)
-        if file_path_re is None:
+        if file_path_re := DATA_SET_FILENAME_PATTERN.search(path):
+            extracted = root / file_path_re.group(1)
+        else:
             raise ValueError("Data set filename doesn't match")
-        gzipped = join(root, path.lstrip("/"))
-        extracted = join(root, file_path_re.group(1))
+        gzipped = root / path.lstrip("/")
+
         _ret_val.append(DataSet(gzipped=gzipped, extracted=extracted, url=url))
     return _ret_val
 

@@ -19,7 +19,7 @@ class TestDownloadAndExtractDataset(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         data_sets = get_data_sets(
-            urls=[f"http://127.0.0.1:{TEST_HTTP_PORT}/{TEST_FILENAME}"]
+            urls=[f"http://127.0.0.1:{TEST_HTTP_PORT}/{TEST_FILENAME}"],
         )
         cls.downloader = DataSetsHandler(data_sets)
         cls.server = FakeHTTPServer()

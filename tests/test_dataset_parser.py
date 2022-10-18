@@ -1,6 +1,4 @@
-import csv
 import unittest
-from os.path import join
 from pathlib import Path
 from unittest import mock
 
@@ -8,8 +6,8 @@ from src.dataset_parser import DatasetParser
 from src.utils import get_config
 from tests.utils import get_root_dir, CONFIG_REL_PATH, DATASETS_REL_PATH
 
-CONFIG = get_config(join(get_root_dir(), CONFIG_REL_PATH))
-DATASET_DIR = join(get_root_dir(), DATASETS_REL_PATH)
+CONFIG = get_config(get_root_dir() / CONFIG_REL_PATH)
+DATASET_DIR = get_root_dir() / DATASETS_REL_PATH
 EXPECTED_DATA = {
     "principal.csv": 10,
     "profession.csv": 6,

@@ -3,7 +3,7 @@ import gzip
 import http.server
 import io
 from os import getcwd
-from os.path import join, pardir, isfile
+from os.path import isfile
 
 __all__ = [
     "FakeHTTPServer",
@@ -15,6 +15,8 @@ __all__ = [
     "DATASETS_REL_PATH",
     "get_root_dir",
 ]
+
+from pathlib import Path
 
 TEST_HTTP_PORT = 8333
 DELIMITER = "\t"
@@ -34,8 +36,8 @@ nm0000009	Richard Burton	1925	1984	actor,producer,soundtrack	tt0059749,tt0087803
 """.strip(
     "\n"
 )
-CONFIG_REL_PATH = join("config", "config.yml")
-DATASETS_REL_PATH = join("tests", "datasets")
+CONFIG_REL_PATH = Path("config") / "config.yml"
+DATASETS_REL_PATH = Path("tests") / "datasets"
 
 
 class Handler(http.server.SimpleHTTPRequestHandler):
@@ -69,7 +71,7 @@ class FakeHTTPServer(http.server.HTTPServer):
         super().__init__(("", TEST_HTTP_PORT), Handler)
 
 
-def get_root_dir():
-    if isfile(join(getcwd(), CONFIG_REL_PATH)):
-        return getcwd()
-    return join(getcwd(), pardir)
+def get_root_dir() -> Path:
+    if isfile(Path(getcwd() / CONFIG_REL_PATH)):
+        return Path(getcwd())
+    return Path(getcwd()).parent

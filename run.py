@@ -1,6 +1,7 @@
 from argparse import ArgumentParser
 from os import getcwd
 from os.path import join
+from pathlib import Path
 
 from src.utils import get_config, get_data_sets
 
@@ -16,11 +17,11 @@ def main(cmd_args):
         with urllib.request.urlopen(CONFIG["data_sets_url"]) as response:
             imdb_page_content = response.read()
 
-        data_sets = get_data_sets(urls=get_links(imdb_page_content, CONFIG), root=cmd_args.root)
-
-        handler = DataSetsHandler(
-            data_sets
+        data_sets = get_data_sets(
+            urls=get_links(imdb_page_content, CONFIG), root=Path(cmd_args.root)
         )
+
+        handler = DataSetsHandler(data_sets)
 
         if cmd_args.download:
             handler.download()

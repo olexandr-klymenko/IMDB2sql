@@ -1,12 +1,11 @@
 import unittest
-from os.path import join
 
 import validators
 
 from src.utils import get_links, get_config
 from tests.utils import get_root_dir, CONFIG_REL_PATH
 
-CONFIG = get_config(join(get_root_dir(), CONFIG_REL_PATH))
+CONFIG = get_config(get_root_dir() / CONFIG_REL_PATH)
 
 
 class TestGetLinks(unittest.TestCase):

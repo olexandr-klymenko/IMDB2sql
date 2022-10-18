@@ -1,5 +1,4 @@
 import unittest
-from os.path import join
 from pathlib import Path
 from sqlalchemy.orm import sessionmaker
 from typing import List
@@ -11,8 +10,8 @@ from src.dataset_parser import DatasetParser
 from src.utils import get_config
 from tests.utils import get_root_dir, CONFIG_REL_PATH, DATASETS_REL_PATH
 
-CONFIG = get_config(join(get_root_dir(), CONFIG_REL_PATH))
-DATASET_DIR = join(get_root_dir(), DATASETS_REL_PATH)
+CONFIG = get_config(get_root_dir() / CONFIG_REL_PATH)
+DATASET_DIR = get_root_dir() / DATASETS_REL_PATH
 
 
 class TestDataSetLoader(unittest.TestCase):

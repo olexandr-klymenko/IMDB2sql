@@ -23,7 +23,7 @@ def get_table_object(table):
 
 class DatasetLoader:
     def __init__(self, cmd_args, config: Dict):
-        self.root = cmd_args.root
+        self.root = Path(cmd_args.root)
         self.db_uri = cmd_args.dburi
         self.resume = cmd_args.resume
         self.debug = cmd_args.debug
@@ -76,7 +76,7 @@ class DatasetLoader:
             print(f"Copying data to '{table_name}' table ...")
         handler = partial(self._copy_file, self.db_uri, table_name)
         with Pool(cpu_count()) as pool:
-            pool.map(handler, glob(str(Path(self.root, table_name, "*"))))
+            pool.map(handler, glob(str(self.root / table_name / "*")))
 
     @staticmethod
     def _copy_file(db_uri: str, table_name: str, file_name: str):

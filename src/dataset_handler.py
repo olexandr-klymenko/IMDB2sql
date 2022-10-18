@@ -6,6 +6,7 @@ from os.path import exists
 from typing import List
 
 import requests
+from rich.progress import track
 from tqdm.auto import tqdm
 
 from src.utils import DataSet
@@ -44,9 +45,8 @@ class DataSetsHandler:
         print(f"{data_set.gzipped} -> {data_set.extracted} ...")
         with gzip.open(data_set.gzipped) as zf:
             with open(data_set.extracted, "w") as f:
-                for line in zf:
+                for line in track(zf, description="[green]Extracting dataset ..."):
                     f.write(line.decode())
-                os.remove(data_set.gzipped)
 
     def cleanup(self):
         for data_set in self.data_sets:
